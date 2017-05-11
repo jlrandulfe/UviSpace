@@ -230,6 +230,17 @@ soc_system u0 (
   
   .clk_clk                               ( CLOCK_50 ),
   .reset_reset_n                         ( 1'b1 ),
+  // SDRAM Controller
+  .sdram_controller_wire_addr            ( DRAM_ADDR ),
+  .sdram_controller_wire_ba              ( DRAM_BA ),
+  .sdram_controller_wire_cas_n           ( DRAM_CAS_N ),
+  .sdram_controller_wire_cke             ( DRAM_CKE ),
+  .sdram_controller_wire_cs_n            ( DRAM_CS_N ),
+  .sdram_controller_wire_dq              ( DRAM_DQ ),
+  .sdram_controller_wire_dqm             ( {DRAM_UDQM,DRAM_LDQM} ),
+  .sdram_controller_wire_ras_n           ( DRAM_RAS_N ),
+  .sdram_controller_wire_we_n            ( DRAM_WE_N ),
+  .pll_sdram_clks_143_clk                ( DRAM_CLK ),
   // Avalon camera (Unused ports left unwired)
   .avalon_camera_export_clk              ( ),
   .avalon_camera_export_start            (),
@@ -463,86 +474,86 @@ rgb2hue hue(
   wire        out_hue_valid;
 
 //  SDRAM memory based on DE1-SOC demonstration
-Sdram_Control u1( 
-  // HOST Side
-  .REF_CLK(CLOCK_50),
-  .RESET_N(1'b1),
-  // FIFO Write Side 1
-  .WR1_DATA(fifo1_writedata),         //data bus size: 16 bits
-  .WR1(fifo_write_enable),
-  .WR1_ADDR(0),
-  .WR1_MAX_ADDR(640*480),             //address bus size: 25 bits
-  .WR1_LENGTH(9'h80),                 //Max allowed size: 8 bits
-  .WR1_LOAD(!hps_fpga_reset_n),
-  .WR1_CLK(~ccd_pixel_clk),
-  // FIFO Write Side 2 (Unused. Needed if 8 bits per pixel are used)
-  .WR2_DATA(fifo1_writedata),         //data bus size: 16 bits
-  .WR2(fifo_write_enable),
-  .WR2_ADDR(22'h100000),
-  .WR2_MAX_ADDR(22'h100000+640*480),  //address bus size: 25 bits
-  .WR2_LENGTH(9'h80),                 //Max allowed size: 8 bits
-  .WR2_LOAD(!hps_fpga_reset_n),
-  .WR2_CLK(~ccd_pixel_clk),
-  // FIFO Read Side 1
-  .RD1_DATA(fifo1_readdata),          //data bus size: 16 bits
-  .RD1(vga_enable),                   //Read enable
-  .RD1_ADDR(0),     
-  .RD1_MAX_ADDR(640*480),             //address bus size: 25 bits
-  .RD1_LENGTH(9'h80),                 //Max allowed size: 8 bits
-  .RD1_LOAD(!hps_fpga_reset_n),
-  .RD1_CLK(~clk_25),
-  // FIFO Read Side 2 (Unused. Needed if 8 bits per pixel are used)
-  .RD2_DATA(fifo2_readdata),          //data bus size: 16 bits
-  .RD2(vga_enable),                   //Read enable
-  .RD2_ADDR(22'h100000),     
-  .RD2_MAX_ADDR(22'h100000+640*480),  //address bus size: 25 bits
-  .RD2_LENGTH(9'h80),                 //Max allowed size: 8 bits
-  .RD2_LOAD(!hps_fpga_reset_n),
-  .RD2_CLK(~clk_25),
-  // SDRAM Side
-  .SA(DRAM_ADDR),
-  .BA(DRAM_BA),
-  .CS_N(DRAM_CS_N),
-  .CKE(DRAM_CKE),
-  .RAS_N(DRAM_RAS_N),
-  .CAS_N(DRAM_CAS_N),
-  .WE_N(DRAM_WE_N),
-  .DQ(DRAM_DQ),
-  .DQM({DRAM_UDQM,DRAM_LDQM}),
-  .SDR_CLK(DRAM_CLK)  
-  );
+// Sdram_Control u1( 
+//   // HOST Side
+//   .REF_CLK(CLOCK_50),
+//   .RESET_N(1'b1),
+//   // FIFO Write Side 1
+//   .WR1_DATA(fifo1_writedata),         //data bus size: 16 bits
+//   .WR1(fifo_write_enable),
+//   .WR1_ADDR(0),
+//   .WR1_MAX_ADDR(640*480),             //address bus size: 25 bits
+//   .WR1_LENGTH(9'h80),                 //Max allowed size: 8 bits
+//   .WR1_LOAD(!hps_fpga_reset_n),
+//   .WR1_CLK(~ccd_pixel_clk),
+//   // FIFO Write Side 2 (Unused. Needed if 8 bits per pixel are used)
+//   .WR2_DATA(fifo1_writedata),         //data bus size: 16 bits
+//   .WR2(fifo_write_enable),
+//   .WR2_ADDR(22'h100000),
+//   .WR2_MAX_ADDR(22'h100000+640*480),  //address bus size: 25 bits
+//   .WR2_LENGTH(9'h80),                 //Max allowed size: 8 bits
+//   .WR2_LOAD(!hps_fpga_reset_n),
+//   .WR2_CLK(~ccd_pixel_clk),
+//   // FIFO Read Side 1
+//   .RD1_DATA(fifo1_readdata),          //data bus size: 16 bits
+//   .RD1(vga_enable),                   //Read enable
+//   .RD1_ADDR(0),     
+//   .RD1_MAX_ADDR(640*480),             //address bus size: 25 bits
+//   .RD1_LENGTH(9'h80),                 //Max allowed size: 8 bits
+//   .RD1_LOAD(!hps_fpga_reset_n),
+//   .RD1_CLK(~clk_25),
+//   // FIFO Read Side 2 (Unused. Needed if 8 bits per pixel are used)
+//   .RD2_DATA(fifo2_readdata),          //data bus size: 16 bits
+//   .RD2(vga_enable),                   //Read enable
+//   .RD2_ADDR(22'h100000),     
+//   .RD2_MAX_ADDR(22'h100000+640*480),  //address bus size: 25 bits
+//   .RD2_LENGTH(9'h80),                 //Max allowed size: 8 bits
+//   .RD2_LOAD(!hps_fpga_reset_n),
+//   .RD2_CLK(~clk_25),
+//   // SDRAM Side
+//   .SA(DRAM_ADDR),
+//   .BA(DRAM_BA),
+//   .CS_N(DRAM_CS_N),
+//   .CKE(DRAM_CKE),
+//   .RAS_N(DRAM_RAS_N),
+//   .CAS_N(DRAM_CAS_N),
+//   .WE_N(DRAM_WE_N),
+//   .DQ(DRAM_DQ),
+//   .DQM({DRAM_UDQM,DRAM_LDQM}),
+//   .SDR_CLK(DRAM_CLK)  
+//   );
   reg    fifo_write_enable;
 
 
 // VGA controller component.
-vga_controller vga_component(
-  .pixel_clk  ( clk_25 ),
-  .reset_n    ( hps_fpga_reset_n ),
-  .h_sync     ( VGA_HS ),
-  .v_sync     ( VGA_VS ),
-  .disp_ena   ( vga_enable ),
-  .column     (),
-  .row        (),
-  .n_blank    ( VGA_BLANK_N ),
-  .n_sync     ( VGA_SYNC_N ),
-  .data_req   ( vga_request )
-  );
+// vga_controller vga_component(
+//   .pixel_clk  ( clk_25 ),
+//   .reset_n    ( hps_fpga_reset_n ),
+//   .h_sync     ( VGA_HS ),
+//   .v_sync     ( VGA_VS ),
+//   .disp_ena   ( vga_enable ),
+//   .column     (),
+//   .row        (),
+//   .n_blank    ( VGA_BLANK_N ),
+//   .n_sync     ( VGA_SYNC_N ),
+//   .data_req   ( vga_request )
+//   );
 
-  // Send the data on the FIFO memory to the VGA outputs.
-  assign VGA_R = (!vga_enable) ? 0 :
-                 (!SW[3])      ? fifo1_readdata[7:0] :
-                 (SW[0])       ? {fifo1_readdata[14:10], 3'd0} :
-                 0;
-  assign VGA_G = (!vga_enable) ? 0 :
-                 (!SW[3])      ? fifo1_readdata[7:0] :
-                 (SW[1])       ? {fifo1_readdata[9:5], 3'd0} :
-                 0;
-  assign VGA_B = (!vga_enable) ? 0 :
-                 (!SW[3])      ? fifo1_readdata[7:0] :
-                 (SW[2])       ? {fifo1_readdata[4:0], 3'd0} :
-                 0;
-  // Set the VGA clock to 25 MHz.
-  assign  VGA_CLK = clk_25;
+//   // Send the data on the FIFO memory to the VGA outputs.
+//   assign VGA_R = (!vga_enable) ? 0 :
+//                  (!SW[3])      ? fifo1_readdata[7:0] :
+//                  (SW[0])       ? {fifo1_readdata[14:10], 3'd0} :
+//                  0;
+//   assign VGA_G = (!vga_enable) ? 0 :
+//                  (!SW[3])      ? fifo1_readdata[7:0] :
+//                  (SW[1])       ? {fifo1_readdata[9:5], 3'd0} :
+//                  0;
+//   assign VGA_B = (!vga_enable) ? 0 :
+//                  (!SW[3])      ? fifo1_readdata[7:0] :
+//                  (SW[2])       ? {fifo1_readdata[4:0], 3'd0} :
+//                  0;
+//   // Set the VGA clock to 25 MHz.
+//   assign  VGA_CLK = clk_25;
 
 
 /*

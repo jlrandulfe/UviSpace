@@ -17,7 +17,7 @@
 
 #define HPS_FPGA_BRIDGE_BASE 0xC0000000
 #define HW_REGS_BASE ( HPS_FPGA_BRIDGE_BASE )
-#define HW_REGS_SPAN ( 0x04000000 )
+#define HW_REGS_SPAN ( 0x20000000 )
 #define HW_REGS_MASK ( HW_REGS_SPAN - 1 )
 
 int main(int argc, char **argv) {
@@ -25,6 +25,9 @@ int main(int argc, char **argv) {
     int fd;
     void *camera_virtual_address;
     void *dipsw_virtual_address;
+    void *sdram_virtual_address;
+    int i;
+
     // Open the device file for accessing the physical memory.
     if( ( fd = open( "/dev/mem", ( O_RDWR | O_SYNC ) ) ) == -1 ) {
         printf( "ERROR: could not open \"/dev/mem\"...\n" );
@@ -39,6 +42,8 @@ int main(int argc, char **argv) {
         close( fd );
         return( 1 );
     }
+    
+    /*
     // Virtual address of the camera registers.
     camera_virtual_address = virtual_base + ( ( unsigned long  )( AVALON_CAMERA_BASE ) & ( unsigned long)( HW_REGS_MASK ) );
     // Virtual address of the board switches.
@@ -53,12 +58,38 @@ int main(int argc, char **argv) {
         // wait 1s.
         usleep( 1000*1000 );
     }
+*/
+
+     // Virtual address of the board switches.
+    sdram_virtual_address = virtual_base + ( ( unsigned long  )( 0x4000000 ) & ( unsigned long)( HW_REGS_MASK ) );
+    
+    uint16_t val;
+    uint16_t* sdram_ptr;
+    val = 0;
+    sdram_ptr = (uint16_t* )sdram_virtual_address;
+    for(i=0; i<(512); i++)
+    {
+        if (i==0) printf("Before WR\n");
+        *sdram_ptr = i;   //WR
+        if (i==0) printf("Before RD\n");
+        val = *sdram_ptr; //RD
+        if (i==0) printf("Before Check\n");
+        if (val != i) 
+        {
+            printf("Error when i = %d", i);
+            break;
+        }
+        sdram_ptr++;
+    }
+    printf("End of check\n");
+
     // clean up the memory mapping and exit
     if( munmap( virtual_base, HW_REGS_SPAN ) != 0 ) {
         printf( "ERROR: munmap() failed...\n" );
         close( fd );
         return( 1 );
     }
+
     close( fd );
     return( 0 );
 }
