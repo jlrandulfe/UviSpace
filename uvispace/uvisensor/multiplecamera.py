@@ -376,10 +376,10 @@ class DataFusionThread(threading.Thread):
         sRight = input("Introduce sRight of test\n")
         # Save poses in spreadsheet.
         saveposes.data2spreadsheet(self.array2save,
-                "tmp/{}-L{}-R{}.xlsx".format(self.filename, sLeft, sRight))
+                "datatemp/{}-L{}-R{}.xlsx".format(self.filename, sLeft, sRight))
         # Save poses in textfile.
         saveposes.data2textfile(self.array2save,
-                "tmp/{}-L{}-R{}.txt".format(self.filename, sLeft, sRight))
+                "datatemp/{}-L{}-R{}.txt".format(self.filename, sLeft, sRight))
 
 
 class UserThread(threading.Thread):
@@ -415,7 +415,7 @@ class UserThread(threading.Thread):
             # Start the cycle timer
             cycle_start_time = time.time()
             i = raw_input("Press 'Q' to stop the script... ")
-            if i == 'Q':
+            if i in ('q', 'Q'):
                 self.end_event.set()
             # Sleep the rest of the cycle
             while (time.time() - cycle_start_time < self.cycletime):

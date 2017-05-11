@@ -33,20 +33,20 @@ def main():
     my_serial = connect_and_check(robot_id)
     my_robot = RobotController(robot_id)
     # Request of speeds and time to the user
-    sRight = input("Enter the speed value for the right wheels, between 0 and "
-                    "255 \n")
-    sLeft = input("Enter the speed value for the left wheels, between 0 and "
-                    "255 \n")
-    operatingtime = input("Enter the time to evaluate in seconds \n")
+    sp_left = input("Enter the speed value for the left wheels, between "
+                    "0 and 255 \n")
+    sp_right = input("Enter the speed value for the right wheels, between "
+                    "0 and 255 \n")
+    operatingtime = float(raw_input("Enter the time to evaluate in seconds \n"))  
     init_time = time.time()
-    print "I am sending (%d, %d)" % (sRight, sLeft)
+    print "I am sending (%d, %d)" % (sp_right, sp_left)
     while (time.time() - init_time) < operatingtime:
-        my_serial.move([sRight, sLeft])
+        my_serial.move([sp_right, sp_left])
     # When the desired time passes, the speed is zero
-    sRight = 127
-    sLeft = 127
-    my_serial.move([sRight, sLeft])
-    print "I am sending (%d, %d)" % (sRight, sLeft)
+    sp_right = 127
+    sp_left = 127
+    my_serial.move([sp_right, sp_left])
+    print "I am sending (%d, %d)" % (sp_right, sp_left)
 
 if __name__ == '__main__':
     main()
