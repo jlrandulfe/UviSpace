@@ -938,7 +938,7 @@
   <parameter name="gui_mif_generate" value="false" />
   <parameter name="gui_multiply_factor" value="1" />
   <parameter name="gui_number_of_clocks" value="2" />
-  <parameter name="gui_operation_mode" value="direct" />
+  <parameter name="gui_operation_mode" value="normal" />
   <parameter name="gui_output_clock_frequency0" value="143.0" />
   <parameter name="gui_output_clock_frequency1" value="143.0" />
   <parameter name="gui_output_clock_frequency10" value="100.0" />
@@ -1329,7 +1329,7 @@
    kind="clock"
    version="16.0"
    start="pll_sdram_clks.outclk0"
-   end="sdram_controller.clk" />
+   end="dipsw_pio.clk" />
  <connection
    kind="clock"
    version="16.0"
@@ -1339,12 +1339,12 @@
    kind="clock"
    version="16.0"
    start="pll_sdram_clks.outclk0"
-   end="dipsw_pio.clk" />
+   end="button_pio.clk" />
  <connection
    kind="clock"
    version="16.0"
    start="pll_sdram_clks.outclk0"
-   end="button_pio.clk" />
+   end="sdram_controller.clk" />
  <connection
    kind="clock"
    version="16.0"
