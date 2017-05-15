@@ -28,7 +28,7 @@ def read_data(filename_spreadsheet="12_05_2017_1433-L1-R1.xlsx"):
     """
     try:
         wb = load_workbook(filename_spreadsheet)
-    except:
+    except IOError:
         wb = Workbook()
     ws = wb.active
     #Initialization of matrices for data.
@@ -91,14 +91,14 @@ def save_data(data, analyze=False):
         element = '%9s' % (element,)
         header_numpy = '{}{}\t'.format(header_numpy, element)
     #Call to save data in textfile.
-    np.savetxt(name_txt, data, delimiter='\t', fmt='%9.2f',
+    np.savetxt(name_txt, data, delimiter='\t', fmt='%9.3f',
                header=header_numpy, comments='')
     #Save data to masterfile.
     if save_master:
         #The average speed data is in the last row and last column.
         last_row = data.shape[0]-1
         last_col = data.shape[1]-1
-        avg_speed = round(float(data[last_row,last_col]),2)
+        avg_speed = round(float(data[last_row,last_col]),3)
         save2master_xlsx(avg_speed, sp_left, sp_right)
         save2master_txt(avg_speed, sp_left, sp_right)
 #    data2textfile(header_text, data, filename_textfile)
@@ -131,7 +131,8 @@ def analize_data(data):
             diff_length[x] = -math.sqrt(diff_length[x])
         #Prevents division between zero.
         if diff_data[x,0] != 0:
-            diff_speed[x] = diff_length[x] / diff_data[x,0]
+            #Speed in millimeters/second.
+            diff_speed[x] = diff_length[x] / diff_data[x,0] * 1000
     #Complete data matrix with new data.
     diff_data = np.insert(diff_data, 4, diff_length, axis=1)
     diff_data = np.insert(diff_data, 5, diff_speed, axis=1)
@@ -167,7 +168,7 @@ def data2spreadsheet(header, data, filename_spreadsheet):
     #Write in spreadsheet the data
     for x in range(1, rows):
         for y in range(0, cols):
-            element = round(float(data[x,y]),2)
+            element = round(float(data[x,y]),3)
             ws.cell(column=y+1, row=x+1, value=element)
     wb.save(filename_spreadsheet)
 
@@ -192,7 +193,7 @@ def data2textfile(headboard, data, filename_textfile):
         text = text + "\n"
         for x in range(1, rows):
             for y in range(0, cols):
-                element = float("{0:.2f}".format(data[x,y]))
+                element = float("{0:.3f}".format(data[x,y]))
                 text = text + "{} \t\t\t".format(element)
             text = text + "\n"
         outfile.write(text)

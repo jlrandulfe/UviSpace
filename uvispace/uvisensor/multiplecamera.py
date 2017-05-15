@@ -341,6 +341,8 @@ class DataFusionThread(threading.Thread):
                 # Convert coordinates to meters.
                 mpose = [pose[0] / 1000, pose[1] / 1000, pose[2]]
                 diff_time = time.time() - self.initial_time
+                # Time in milliseconds.
+                diff_time = diff_time * 1000
                 # Temporary array to save time and pose in meters.
                 new_data = np.array([diff_time, pose[0], pose[1],
                                        pose[2]]).astype(np.float32)

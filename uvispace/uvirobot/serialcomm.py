@@ -175,7 +175,7 @@ class SerMesProtocol(Serial):
         while _STX != self.STX:
             current_time = time.time()
             # Gives the slave 2 seconds to return an answer.
-            if current_time - start_time > 2:
+            if current_time - start_time > 0.1:
                 print 'Error, STX was not found'
                 return (Rx_OK, fun_code, length, data)
             _STX = self.read(1)
