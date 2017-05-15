@@ -235,5 +235,7 @@ def save2master_txt(avg_speed, sp_left, sp_right):
     """
     text = ''
     with open("datatemp/masterfile.txt", 'a') as outfile:
-        text = text + "{}\t{}\t{}\t\n".format(avg_speed, sp_left, sp_right)
+    #TODO improve format
+        text = text + "{}\t\t\t{}\t\t{}\t\t\n".format(avg_speed, sp_left, 
+                                                      sp_right)
         outfile.write(text)

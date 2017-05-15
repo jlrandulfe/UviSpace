@@ -355,9 +355,9 @@ class DataFusionThread(threading.Thread):
             while (time.time() - cycle_start_time < self.cycletime):
                 pass
         # Instructions to execute after end_event is raised.
-        if save2file:
+        if self.save2file:
             # Save historic data containing poses and times.
-            saveposes.savedata(self.data_hist, analyze=True)
+            saveposes.save_data(self.data_hist, analyze=True)
 
 
 class UserThread(threading.Thread):
