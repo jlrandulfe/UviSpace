@@ -254,6 +254,7 @@ class DataFusionThread(threading.Thread):
         self.data_hist = np.array([0, 0, 0, 0]).astype(np.float32)
         # Variable containing the initial reference time.
         self.initial_time = 0
+        self.save2file = True
 
     def run(self):
         """Main routine of the DataFusionThread."""
@@ -335,7 +336,7 @@ class DataFusionThread(threading.Thread):
                 if element.has_key('1'):
                     if element['1'] is not None:
                         triangle = copy.copy(element['1'])
-            if triangle:            
+            if triangle:
                 pose = triangle.get_pose()
                 # Convert coordinates to meters.
                 mpose = [pose[0] / 1000, pose[1] / 1000, pose[2]]
@@ -354,8 +355,9 @@ class DataFusionThread(threading.Thread):
             while (time.time() - cycle_start_time < self.cycletime):
                 pass
         # Instructions to execute after end_event is raised.
-        # Save historic data containing poses and times.
-        saveposes.savedata(self.data_hist, analyze=True)
+        if save2file:
+            # Save historic data containing poses and times.
+            saveposes.savedata(self.data_hist, analyze=True)
 
 
 class UserThread(threading.Thread):
