@@ -230,6 +230,8 @@ soc_system u0 (
   
   .clk_clk                               ( CLOCK_50 ),
   .reset_reset_n                         ( 1'b1 ),
+  .clk_50_plls_clk                       ( CLOCK2_50 ),
+  .reset_clk_plls_reset_n                ( 1'b1 ),
   // SDRAM Controller
   .sdram_controller_wire_addr            ( DRAM_ADDR ),
   .sdram_controller_wire_ba              ( DRAM_BA ),
