@@ -9,7 +9,7 @@
    categories="System" />
  <parameter name="bonusData"><![CDATA[bonusData 
 {
-   element avalon_camera
+   element avalon_camera_comp
    {
       datum _sortIndex
       {
@@ -22,7 +22,7 @@
          type = "boolean";
       }
    }
-   element avalon_camera.s1
+   element avalon_camera_comp.s1
    {
       datum baseAddress
       {
@@ -278,7 +278,7 @@
  <instanceScript></instanceScript>
  <interface
    name="avalon_camera_export"
-   internal="avalon_camera.export"
+   internal="avalon_camera_comp.export"
    type="conduit"
    dir="end" />
  <interface
@@ -331,7 +331,11 @@
    internal="sdram_controller.wire"
    type="conduit"
    dir="end" />
- <module name="avalon_camera" kind="avalon_camera" version="1.0" enabled="1">
+ <module
+   name="avalon_camera_comp"
+   kind="avalon_camera"
+   version="1.0"
+   enabled="1">
   <parameter name="COLUMN_MODE" value="17" />
   <parameter name="COLUMN_SIZE" value="2559" />
   <parameter name="EXPOSURE" value="1984" />
@@ -1569,7 +1573,7 @@
    kind="avalon"
    version="16.0"
    start="hps_0.h2f_axi_master"
-   end="avalon_camera.s1">
+   end="avalon_camera_comp.s1">
   <parameter name="arbitrationPriority" value="1" />
   <parameter name="baseAddress" value="0x0000" />
   <parameter name="defaultConnection" value="false" />
@@ -1647,7 +1651,7 @@
    kind="clock"
    version="16.0"
    start="pll_camera.outclk0"
-   end="avalon_camera.clock" />
+   end="avalon_camera_comp.clock" />
  <connection
    kind="clock"
    version="16.0"
@@ -1671,7 +1675,7 @@
    kind="reset"
    version="16.0"
    start="clk_PLLs.clk_reset"
-   end="avalon_camera.clock_reset" />
+   end="avalon_camera_comp.clock_reset" />
  <connection
    kind="reset"
    version="16.0"
