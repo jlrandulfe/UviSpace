@@ -63,12 +63,22 @@ def save_data(data, analyze=False):
     """
     #Get the SP values from the user.
     time.sleep(0.2)
+    #Delete first row data (row of zeros)
+    rows = data.shape[0]
+    data = data[1:rows,:]
+    #First sample, time zero.
+    rows = data.shape[0]
+    data[0:rows, 0] = data[0:rows,0] - data[0,0]
+#    data[0:rows, 1] = np.around(data[0:rows, 0], decimals=1)
+    data[:, 1] = (data[:,0]*100).astype(np.int) / 100.0
+    import pdb; pdb.set_trace()
+    #data[0:rows, 3] = np.around(data[0:rows, 3], decimals=2)
     #TODO Try, except correct value.
     sp_left = input("Introduce value of sp_left between 0 and 255\n")
     sp_right = input("Introduce value of sp_left between 0 and 255\n")
     #Call for data analysis function.
     if analyze:
-        data, save_master = analize_data(data)
+        data, save_master = analyze_data(data)
         header_text = np.array(['time', 'pos x', 'pos y', 'angle', 'difftime',
                             'diffposx', 'diffposy', 'diffangl', 'difflong',
                             'relspeed'])
@@ -103,7 +113,7 @@ def save_data(data, analyze=False):
         save2master_txt(avg_speed, sp_left, sp_right)
 #    data2textfile(header_text, data, filename_textfile)
 
-def analize_data(data):
+def analyze_data(data):
     """
     Receives poses and time of matrix to analyze.
 
@@ -120,7 +130,7 @@ def analize_data(data):
     diff_length =  np.zeros(rows)
     #Vector differential speed.
     diff_speed = np.zeros(rows)
-    for x in range(2, rows):
+    for x in range(1, rows):
         for y in range(0, cols):
             diff_data[x,y] = data[x,y]-data[x-1,y]
         diff_length[x] = pow(diff_data[x,1],2) + pow(diff_data[x,2],2)
@@ -168,8 +178,10 @@ def data2spreadsheet(header, data, filename_spreadsheet):
     #Write in spreadsheet the data
     for x in range(1, rows):
         for y in range(0, cols):
-            element = round(float(data[x,y]),3)
+            element = float(data[x,y])
             ws.cell(column=y+1, row=x+1, value=element)
+            my_cell = ws.cell(column=y+1, row=x+1)
+            ws.column_dimensions[my_cell.column].width = 10          
     wb.save(filename_spreadsheet)
 
 #TODO NOT USED
