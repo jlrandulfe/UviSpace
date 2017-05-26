@@ -94,10 +94,10 @@ def save_data(data, analyze=False):
         element = '%9s' % (element)
         header_numpy = '{}{}\t'.format(header_numpy, element)
     #Call to save data in textfile.
-#    np.savetxt(name_txt, data, delimiter='\t', fmt='%9.3f',
-#               header=header_numpy, comments='')
-    np.savetxt(name_txt, data, delimiter='\t',
+    np.savetxt(name_txt, data, delimiter='\t', fmt='%9.3f',
                header=header_numpy, comments='')
+#    np.savetxt(name_txt, data, delimiter='\t',
+#               header=header_numpy, comments='')
     #Experiment conditions.
     exp_conditions = ("""-Use camera 2\n-Position initial experiment forward: 
                       right rear wheel profile (-1800, 400), rear axis UGV in 
