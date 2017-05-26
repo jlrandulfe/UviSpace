@@ -18,7 +18,7 @@ import time
 #Excel read/write library
 import openpyxl
 
-def read_data(filename_spreadsheet="25_05_2017_1037-L0-R0.xlsx"):
+def read_data(filename_spreadsheet="26_05_2017_1122-L0-R0.xlsx"):
     """
     It allows to read poses and time of spreadsheet to analyze or save them.
 
@@ -52,6 +52,7 @@ def read_data(filename_spreadsheet="25_05_2017_1037-L0-R0.xlsx"):
             row +=1
     #Call to save and analyze data.
     save_data(data, analyze=True)
+    return data
 
 def save_data(data, analyze=False):
     """
@@ -85,8 +86,6 @@ def save_data(data, analyze=False):
     name_spreadsheet = "{}.xlsx".format(filename)
     name_txt = "{}.txt".format(filename)
     name_mastertxt = "datatemp/masterfile.txt"
-    #Call to save data in spreadsheet.
-    data2spreadsheet(header_text, full_data, name_spreadsheet)
     #Header for numpy savetxt.
     header_numpy = ''
     cols = header_text.shape[0]
@@ -95,8 +94,19 @@ def save_data(data, analyze=False):
         element = '%9s' % (element)
         header_numpy = '{}{}\t'.format(header_numpy, element)
     #Call to save data in textfile.
-    np.savetxt(name_txt, data, delimiter='\t', fmt='%9.3f',
+#    np.savetxt(name_txt, data, delimiter='\t', fmt='%9.3f',
+#               header=header_numpy, comments='')
+    np.savetxt(name_txt, data, delimiter='\t',
                header=header_numpy, comments='')
+    #Experiment conditions.
+    exp_conditions = ("""-Use camera 2\n-Position initial experiment forward: 
+                      right rear wheel profile (-1800, 400), rear axis UGV in 
+                      axis y, in -1800 x\n-Position initial experiment backward: 
+                      right front wheel profile (-600, 400), rear axis UGV in
+                      axis y, in -600""")
+                    
+    #Call to save data in spreadsheet.
+    data2spreadsheet(header_text, full_data, name_spreadsheet, exp_conditions)
     #Save data to masterfile.
     if save_master:
         #The average speed data is in the last row and last column.
@@ -157,7 +167,7 @@ def analyze_data(data):
 
     return data, save_master
 
-def data2spreadsheet(header, data, filename_spreadsheet):
+def data2spreadsheet(header, data, filename_spreadsheet, exp_conditions):
     """
     Receives poses and time, and saves them in a spreadsheet.
 
@@ -166,7 +176,6 @@ def data2spreadsheet(header, data, filename_spreadsheet):
     :param filename_spreadsheet: name of spreadsheet where the data
      will be saved.
     """
-    #doc = openpyxl.load_workbook(str(file_path))
     try:
         wb = openpyxl.load_workbook(filename_spreadsheet)
     except:
@@ -184,6 +193,31 @@ def data2spreadsheet(header, data, filename_spreadsheet):
             ws.cell(column=y+1, row=x+1, value=element).number_format = '0.00'
             my_cell = ws.cell(column=y+1, row=x+1)
             ws.column_dimensions[my_cell.column].width = 10
+    ws.merge_cells('M1:W3')
+    ws.cell('M1').value = exp_conditions
+    #Statistics
+    ws.cell('M1').value = exp_conditions
+    ws.merge_cells('M5:O5')
+    ws.cell('M5').value = "Average Differential Time:"
+    ws.merge_cells('M6:O6')
+    ws.cell('M6').value = "Median Differential Time:"
+    ws.merge_cells('M7:O7')
+    ws.cell('M7').value = "Mode Differential Time:"
+    ws.merge_cells('M8:O8')
+    ws.cell('M8').value = "Variance Differential Time:"
+    ws.merge_cells('M9:O9')
+    ws.cell('M9').value = "Tipical Deviation Differential Time:"
+    ws.merge_cells('M10:O10')
+    ws.cell('M10').value = "Average Differential Pos x:"
+    ws.merge_cells('M11:O11')
+    ws.cell('M11').value = "Median Differential Pos x:"
+    ws.merge_cells('M12:O12')
+    ws.cell('M12').value = "Mode Differential Pos x:"
+    ws.merge_cells('M13:O13')
+    ws.cell('M13').value = "Variance Differential Pos x:"
+    ws.merge_cells('M14:O14')
+    ws.cell('M14').value = "Tipical Deviation Differential Pos x:"
+    
     wb.save(filename_spreadsheet)
 
 #TODO NOT USED
