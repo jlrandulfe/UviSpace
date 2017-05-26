@@ -251,7 +251,7 @@ class DataFusionThread(threading.Thread):
         self._inborders = copy.copy(self.inborders)
         self._reset_flags = copy.copy(self.reset_flags)
         # Array to save historic poses values. Initial values set to 0.
-        self.data_hist = np.array([0, 0, 0, 0]).astype(np.float32)
+        self.data_hist = np.array([0, 0, 0, 0]).astype(np.float64)
         # Variable containing the initial reference time.
         self.initial_time = 0
         self.save2file = True
@@ -345,7 +345,7 @@ class DataFusionThread(threading.Thread):
                 diff_time = diff_time * 1000
                 # Temporary array to save time and pose in meters.
                 new_data = np.array([diff_time, pose[0], pose[1],
-                                       pose[2]]).astype(np.float32)
+                                       pose[2]]).astype(np.float64)
                 # Matrix of floats to save data.
                 self.data_hist = np.vstack((self.data_hist, new_data))
                 rospy.logdebug("detected triangle at {}mm and {} radians."
@@ -415,6 +415,8 @@ def main():
     # Get the relative path to all the config files stored in /config folder.
     conf_files = glob.glob("./resources/config/*.cfg")
     conf_files.sort()
+    # Reduce the list to only one camera, for testing purposes.
+    conf_files = conf_files[1]
     threads = []
     # A Condition object for each camera thread execution.
     conditions = []

@@ -31,8 +31,8 @@ def read_data(filename_spreadsheet="26_05_2017_1122-L0-R0.xlsx"):
         wb = openpyxl.Workbook()
     ws = wb.active
     #Initialization of matrices for data.
-    data = np.array([0, 0, 0, 0]).astype(np.float32)
-    new_data = np.array([0, 0, 0, 0]).astype(np.float32)
+    data = np.array([0, 0, 0, 0]).astype(np.float64)
+    new_data = np.array([0, 0, 0, 0]).astype(np.float64)
     #The first row is the header, and the second is a set of zeros (already
     #initialized in the matrix). Begins to read row 3.
     row = 3
@@ -50,9 +50,10 @@ def read_data(filename_spreadsheet="26_05_2017_1122-L0-R0.xlsx"):
                 new_data[y] = element
             data = np.vstack([data, new_data])
             row +=1
+    formatted_data = np.round(data, 2)
     #Call to save and analyze data.
-    save_data(data, analyze=True)
-    return data
+    save_data(formatted_data, analyze=True)
+    return formatted_data
 
 def save_data(data, analyze=False):
     """
@@ -63,7 +64,7 @@ def save_data(data, analyze=False):
     """
     #Get the SP values from the user.
     time.sleep(0.2)
-    #Delete first row data (row of zeros)
+    #Delete first row data (row of zeros). Round all values to only 2 decimals.
     data = data[1:data.shape[0], :]
     #First sample, time zero.
     data[0:data.shape[0], 0] = data[0:data.shape[0], 0] - data[0, 0]
@@ -112,8 +113,8 @@ def save_data(data, analyze=False):
         #The average speed data is in the last row and last column.
         rows = data.shape[0]
         cols = data.shape[1]
-        avg_speed = data[rows-1, cols-2]
-        avg_ang_speed = data [rows-1, cols-1]
+        avg_speed = np.round(data[rows-1, cols-2], 2)
+        avg_ang_speed = np.round(data [rows-1, cols-1], 2)
         data_master = np.array([avg_speed, avg_ang_speed, sp_left, sp_right,
                                datestamp])
         save2master_xlsx(data_master)
@@ -164,8 +165,8 @@ def analyze_data(data):
     data = np.vstack([data, sum_data])
     #If you want to save to master file boolean True.
     save_master = True
-
-    return data, save_master
+    formatted_data = np.round(data, 2)
+    return formatted_data, save_master
 
 def data2spreadsheet(header, data, filename_spreadsheet, exp_conditions):
     """
