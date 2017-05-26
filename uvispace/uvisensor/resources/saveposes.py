@@ -16,10 +16,9 @@ import numpy as np
 import sys
 import time
 #Excel read/write library
-from openpyxl import load_workbook
-from openpyxl import Workbook
+import openpyxl
 
-def read_data(filename_spreadsheet="12_05_2017_1433-L1-R1.xlsx"):
+def read_data(filename_spreadsheet="25_05_2017_1037-L0-R0.xlsx"):
     """
     It allows to read poses and time of spreadsheet to analyze or save them.
 
@@ -27,9 +26,9 @@ def read_data(filename_spreadsheet="12_05_2017_1433-L1-R1.xlsx"):
     be read.
     """
     try:
-        wb = load_workbook(filename_spreadsheet)
+        wb = openpyxl.load_workbook(filename_spreadsheet)
     except IOError:
-        wb = Workbook()
+        wb = openpyxl.Workbook()
     ws = wb.active
     #Initialization of matrices for data.
     data = np.array([0, 0, 0, 0]).astype(np.float32)
@@ -64,26 +63,20 @@ def save_data(data, analyze=False):
     #Get the SP values from the user.
     time.sleep(0.2)
     #Delete first row data (row of zeros)
-    rows = data.shape[0]
-    data = data[1:rows,:]
+    data = data[1:data.shape[0], :]
     #First sample, time zero.
-    rows = data.shape[0]
-    data[0:rows, 0] = data[0:rows,0] - data[0,0]
-#    data[0:rows, 1] = np.around(data[0:rows, 0], decimals=1)
-    data[:, 1] = (data[:,0]*100).astype(np.int) / 100.0
-    import pdb; pdb.set_trace()
-    #data[0:rows, 3] = np.around(data[0:rows, 3], decimals=2)
+    data[0:data.shape[0], 0] = data[0:data.shape[0], 0] - data[0, 0]
     #TODO Try, except correct value.
     sp_left = input("Introduce value of sp_left between 0 and 255\n")
     sp_right = input("Introduce value of sp_left between 0 and 255\n")
     #Call for data analysis function.
     if analyze:
         data, save_master = analyze_data(data)
-        header_text = np.array(['time', 'pos x', 'pos y', 'angle', 'difftime',
-                            'diffposx', 'diffposy', 'diffangl', 'difflong',
-                            'relspeed'])
+        header_text = np.array(['Time', 'Pos x', 'Pos y', 'Angle', 'Diff Time',
+                            'Diff Posx', 'Diff Posy', 'Diff Angl', 'Diff Long',
+                            'Rel Speed', 'Rel AnSpd'])
     else:
-        header_text = np.array(['time', 'pos x', 'pos y', 'angle'])
+        header_text = np.array(['Time', 'Pos x', 'Pos y', 'Angle'])
         save_master = False
     full_data = np.vstack([header_text, data])
     # Name of the output file for the poses historic values.
@@ -91,6 +84,7 @@ def save_data(data, analyze=False):
     filename = "datatemp/{}-L{}-R{}".format(datestamp, sp_left, sp_right)
     name_spreadsheet = "{}.xlsx".format(filename)
     name_txt = "{}.txt".format(filename)
+    name_mastertxt = "datatemp/masterfile.txt"
     #Call to save data in spreadsheet.
     data2spreadsheet(header_text, full_data, name_spreadsheet)
     #Header for numpy savetxt.
@@ -98,7 +92,7 @@ def save_data(data, analyze=False):
     cols = header_text.shape[0]
     for x in range (0, cols):
         element = header_text[x]
-        element = '%9s' % (element,)
+        element = '%9s' % (element)
         header_numpy = '{}{}\t'.format(header_numpy, element)
     #Call to save data in textfile.
     np.savetxt(name_txt, data, delimiter='\t', fmt='%9.3f',
@@ -106,11 +100,14 @@ def save_data(data, analyze=False):
     #Save data to masterfile.
     if save_master:
         #The average speed data is in the last row and last column.
-        last_row = data.shape[0]-1
-        last_col = data.shape[1]-1
-        avg_speed = round(float(data[last_row,last_col]),3)
-        save2master_xlsx(avg_speed, sp_left, sp_right)
-        save2master_txt(avg_speed, sp_left, sp_right)
+        rows = data.shape[0]
+        cols = data.shape[1]
+        avg_speed = data[rows-1, cols-2]
+        avg_ang_speed = data [rows-1, cols-1]
+        data_master = np.array([avg_speed, avg_ang_speed, sp_left, sp_right,
+                               datestamp])
+        save2master_xlsx(data_master)
+        save2master_txt(data_master)
 #    data2textfile(header_text, data, filename_textfile)
 
 def analyze_data(data):
@@ -130,10 +127,11 @@ def analyze_data(data):
     diff_length =  np.zeros(rows)
     #Vector differential speed.
     diff_speed = np.zeros(rows)
+    #Vector differential angle speed.
+    diff_angle_speed = np.zeros(rows)
+    diff_data[1:rows, :] = data[1:rows, :] - data [0:(rows-1), :]
+    diff_length[:] = pow(diff_data[:,1],2) + pow(diff_data[:,2],2)
     for x in range(1, rows):
-        for y in range(0, cols):
-            diff_data[x,y] = data[x,y]-data[x-1,y]
-        diff_length[x] = pow(diff_data[x,1],2) + pow(diff_data[x,2],2)
         #Increase or decrease of displacement.
         if diff_data[x,1]>0:
             diff_length[x] = math.sqrt(diff_length[x])
@@ -143,9 +141,11 @@ def analyze_data(data):
         if diff_data[x,0] != 0:
             #Speed in millimeters/second.
             diff_speed[x] = diff_length[x] / diff_data[x,0] * 1000
+    diff_angle_speed[1:rows] = diff_data[1:rows, 3] / diff_data[1:rows, 0] * 1000
     #Complete data matrix with new data.
     diff_data = np.insert(diff_data, 4, diff_length, axis=1)
     diff_data = np.insert(diff_data, 5, diff_speed, axis=1)
+    diff_data = np.insert(diff_data, 6, diff_angle_speed, axis=1)
     data = np.hstack([data, diff_data])
     #Vector sum of columns of data.
     sum_data = diff_data.sum(axis=0)
@@ -161,14 +161,16 @@ def data2spreadsheet(header, data, filename_spreadsheet):
     """
     Receives poses and time, and saves them in a spreadsheet.
 
+    :param header: contains header to save in spreadsheet.
     :param data: contains data to save in spreadsheet.
     :param filename_spreadsheet: name of spreadsheet where the data
      will be saved.
     """
+    #doc = openpyxl.load_workbook(str(file_path))
     try:
-        wb = load_workbook(filename_spreadsheet)
+        wb = openpyxl.load_workbook(filename_spreadsheet)
     except:
-        wb = Workbook()
+        wb = openpyxl.Workbook()
     ws = wb.active
     rows = data.shape[0]
     cols = data.shape[1]
@@ -179,9 +181,9 @@ def data2spreadsheet(header, data, filename_spreadsheet):
     for x in range(1, rows):
         for y in range(0, cols):
             element = float(data[x,y])
-            ws.cell(column=y+1, row=x+1, value=element)
+            ws.cell(column=y+1, row=x+1, value=element).number_format = '0.00'
             my_cell = ws.cell(column=y+1, row=x+1)
-            ws.column_dimensions[my_cell.column].width = 10          
+            ws.column_dimensions[my_cell.column].width = 10
     wb.save(filename_spreadsheet)
 
 #TODO NOT USED
@@ -210,18 +212,18 @@ def data2textfile(headboard, data, filename_textfile):
             text = text + "\n"
         outfile.write(text)
 
-def save2master_xlsx(avg_speed, sp_left, sp_right):
+def save2master_xlsx(data_master):
     """
     Average speed, setpoint left and right wheels are saved in the same spreadsheet.
 
-    :param avg_speed: float32 with average speed.
-    :param sp_left: integer between 0 and 255 of setpoint left speed.
-    :param sp_right: integer between 0 and 255 of setpoint right speed.
+    :param data_master: array that contains the average lineal speed, the
+    average angular speed, the set point left, the set point right, and the
+    name of datafile.
     """
     try:
-        wb = load_workbook("datatemp/masterfile.xlsx")
+        wb = openpyxl.load_workbook("datatemp/masterfile.xlsx")
     except:
-        wb = Workbook()
+        wb = openpyxl.Workbook()
     ws = wb.active
     #Next empty row search.
     row = 1
@@ -233,22 +235,40 @@ def save2master_xlsx(avg_speed, sp_left, sp_right):
         else:
             row +=1
     #Write data in empty row.
-    ws.cell(column=1, row=row, value=avg_speed)
-    ws.cell(column=2, row=row, value=sp_left)
-    ws.cell(column=3, row=row, value=sp_right)
+    cols = data_master.shape[0]
+    for y in range (0, cols):
+        if y < 2:
+            element = float(data_master[y])
+        else:
+            element = data_master[y]
+        ws.cell(column=y+1, row=row, value=element).number_format = '0.00'
+        my_cell = ws.cell(column=y+1, row=row)
+        if y < 3:
+            ws.column_dimensions[my_cell.column].width = 10
+        else:
+            ws.column_dimensions[my_cell.column].width = 15
     wb.save("datatemp/masterfile.xlsx")
 
-def save2master_txt(avg_speed, sp_left, sp_right):
+def save2master_txt(data_master):
     """
     Average speed, setpoint left and right wheels are saved in the same textfile.
 
-    :param avg_speed: float32 with average speed.
-    :param sp_left: integer between 0 and 255 of setpoint left speed.
-    :param sp_right: integer between 0 and 255 of setpoint right speed.
+    :param data_master: array that contains the average lineal speed, the
+    average angular speed, the set point left, the set point right, and the
+    name of datafile.
     """
     text = ''
     with open("datatemp/masterfile.txt", 'a') as outfile:
     #TODO improve format
-        text = text + "{}\t\t\t{}\t\t{}\t\t\n".format(avg_speed, sp_left, 
-                                                      sp_right)
+        text = ''
+        cols = data_master.shape[0]
+        for y in range (0, cols):
+            element = data_master[y]
+            if y < 2:
+                element = float(data_master[y])
+                element = '%9.3f' % (element)
+            else:
+                element = '%9s' % (element)
+            text = '{}{}\t'.format(text, element)
+        text = '{}\n'.format(text)
         outfile.write(text)
