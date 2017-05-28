@@ -13,12 +13,60 @@ This module allows:
 # Standard libraries
 import math
 import numpy as np
+from scipy import stats
 import sys
 import time
 #Excel read/write library
 import openpyxl
 
-def read_data(filename_spreadsheet="26_05_2017_1122-L0-R0.xlsx"):
+def format_spreadsheet(cell):
+    """
+    It allows different types of format in spreadsheet cells.
+
+    :param cell: type of format desired.
+    """
+    #Types of text alignment.
+    if cell == 'center_al':
+        format_cell = openpyxl.styles.Alignment(horizontal='center',
+                                                vertical='center')
+    elif cell == 'right_al':
+        format_cell = openpyxl.styles.Alignment(horizontal='right',
+                                                vertical='center')
+    #Types of font.
+    elif cell == 'title_ft':
+        format_cell = openpyxl.styles.Font(color='FFFFFFFF', size=20, bold=True)
+    elif cell == 'white_ft':
+    #Types of border.
+        format_cell = openpyxl.styles.Font(color='FFFFFFFF', bold=True)
+    elif cell == 'thick_bd':
+        format_cell = openpyxl.styles.Border(
+                                top=openpyxl.styles.Side(border_style='thick',
+                                                         color='FF4143CA'),
+                                bottom=openpyxl.styles.Side(border_style='thick',
+                                                            color='FF4143CA'))
+    elif cell == 'thin_bd':
+        format_cell = openpyxl.styles.Border(
+                                top=openpyxl.styles.Side(border_style='thin',
+                                                         color='FF83C6D6'),
+                                bottom=openpyxl.styles.Side(border_style='thin',
+                                                            color='FF83C6D6'))
+    #Types of fill.
+    elif cell == 'blue_fill':
+        format_cell = openpyxl.styles.PatternFill(fill_type='solid',
+                                                  start_color='FF2F79E6',
+                                                  end_color='FF2F79E6')
+    elif cell == 'skyblue_fill':
+        format_cell = openpyxl.styles.PatternFill(fill_type='solid',
+                                                  start_color='FFDBF4FA',
+                                                  end_color='FFDBF4FA')
+    elif cell == 'white_fill':
+        format_cell = openpyxl.styles.PatternFill(fill_type='solid',
+                                                  start_color='FFFFFFFF',
+                                                  end_color='FFFFFFFF')
+
+    return format_cell
+
+def read_data(filename_spreadsheet="26_05_2017_1322-L160-R200.xlsx"):
     """
     It allows to read poses and time of spreadsheet to analyze or save them.
 
@@ -59,7 +107,7 @@ def save_data(data, analyze=False):
     """
     Receives poses and time of matrix to analyze and/or save them.
 
-    :param data: Matrix of floats32 with data.
+    :param data: Matrix of floats64 with data.
     :param analyze: Boolean that allows analyze or not the data.
     """
     #Get the SP values from the user.
@@ -83,43 +131,34 @@ def save_data(data, analyze=False):
     full_data = np.vstack([header_text, data])
     # Name of the output file for the poses historic values.
     datestamp = "{}".format(time.strftime("%d_%m_%Y_%H%M"))
-    filename = "datatemp/{}-L{}-R{}".format(datestamp, sp_left, sp_right)
-    name_spreadsheet = "{}.xlsx".format(filename)
-    name_txt = "{}.txt".format(filename)
+    filename = "{}-L{}-R{}".format(datestamp, sp_left, sp_right)
+    name_txt = "datatemp/{}.txt".format(filename)
     name_mastertxt = "datatemp/masterfile.txt"
     #Header for numpy savetxt.
     header_numpy = ''
     cols = header_text.shape[0]
     for x in range (0, cols):
         element = header_text[x]
-        element = '%9s' % (element)
+        element = '%8s' % (element)
         header_numpy = '{}{}\t'.format(header_numpy, element)
     #Call to save data in textfile.
-#    np.savetxt(name_txt, data, delimiter='\t', fmt='%9.3f',
-#               header=header_numpy, comments='')
-    np.savetxt(name_txt, data, delimiter='\t',
+    np.savetxt(name_txt, data, delimiter='\t', fmt='%8.2f',
                header=header_numpy, comments='')
     #Experiment conditions.
-    exp_conditions = ("""-Use camera 2\n-Position initial experiment forward: 
-                      right rear wheel profile (-1800, 400), rear axis UGV in 
-                      axis y, in -1800 x\n-Position initial experiment backward: 
-                      right front wheel profile (-600, 400), rear axis UGV in
-                      axis y, in -600""")
-                    
+    exp_conditions = (" -Use camera 2\n -Position initial experiment forward: "
+                      "right rear wheel profile (-1800, 400), rear axis UGV in "
+                      "axis y, in -1800 x\n -Position initial experiment backward: "
+                      "right front wheel profile (-600, 400), rear axis UGV in "
+                      "axis y, in -600 x")
     #Call to save data in spreadsheet.
-    data2spreadsheet(header_text, full_data, name_spreadsheet, exp_conditions)
+    name_to_use = data2spreadsheet(header_text, full_data, filename,
+                                   exp_conditions, save_master)
     #Save data to masterfile.
     if save_master:
         #The average speed data is in the last row and last column.
-        rows = data.shape[0]
-        cols = data.shape[1]
-        avg_speed = np.round(data[rows-1, cols-2], 2)
-        avg_ang_speed = np.round(data [rows-1, cols-1], 2)
-        data_master = np.array([avg_speed, avg_ang_speed, sp_left, sp_right,
-                               datestamp])
+        data_master = np.array([datestamp, sp_left, sp_right, name_to_use])
         save2master_xlsx(data_master)
-        save2master_txt(data_master)
-#    data2textfile(header_text, data, filename_textfile)
+        #save2master_txt(data_master)
 
 def analyze_data(data):
     """
@@ -128,10 +167,34 @@ def analyze_data(data):
     Different time and position values are calculated between two data points.
     From these, the displaced length and the average speed of UGV are calculated.
 
-    :param data: Matrix of floats32 with data.
+    :param data: Matrix of floats64 with data.
     """
     rows = data.shape[0]
     cols = data.shape[1]
+    #Data erase with UGV stopped.
+    #Initial repeated data calculation.
+    pos_x_upper = data[0:20, 1]
+    mode_pos_x_upper = stats.mode(pos_x_upper)
+    pos_y_upper = data[0:20, 2]
+    mode_pos_y_upper = stats.mode(pos_y_upper)
+    #Final repeated data calculation.
+    pos_x_lower = data[(rows-20):rows, 1]
+    mode_pos_x_lower = stats.mode(pos_x_lower)
+    pos_y_lower = data[(rows-20):rows, 2]
+    mode_pos_y_lower = stats.mode(pos_y_lower)
+    #Determination of rows UGV data in motion.
+    for x in range(0, rows):
+        if data[x,1] == mode_pos_x_upper[0] and data[x,2] == mode_pos_y_upper[0]:
+            row_upper = x
+        if data[x,1] == mode_pos_x_lower[0] and data[x,2] == mode_pos_y_lower[0]:
+            row_lower = x + 1
+            break
+    #UGV data in motion.
+    data = data [row_upper:row_lower, :]
+    rows = data.shape[0]
+    cols = data.shape[1]
+    #First sample, time zero.
+    data[0:data.shape[0], 0] = data[0:data.shape[0], 0] - data[0, 0]
     #Differential data matrix: current data minus previous data.
     diff_data = np.zeros_like(data)
     #Vector differential length displaced.
@@ -158,94 +221,85 @@ def analyze_data(data):
     diff_data = np.insert(diff_data, 5, diff_speed, axis=1)
     diff_data = np.insert(diff_data, 6, diff_angle_speed, axis=1)
     data = np.hstack([data, diff_data])
-    #Vector sum of columns of data.
-    sum_data = diff_data.sum(axis=0)
-    a = np.array([0, 0, 0, 0])
-    sum_data = np.hstack([a, sum_data])
-    data = np.vstack([data, sum_data])
     #If you want to save to master file boolean True.
     save_master = True
     formatted_data = np.round(data, 2)
     return formatted_data, save_master
 
-def data2spreadsheet(header, data, filename_spreadsheet, exp_conditions):
+def data2spreadsheet(header, data, filename, exp_conditions, save_master):
     """
     Receives poses and time, and saves them in a spreadsheet.
 
     :param header: contains header to save in spreadsheet.
     :param data: contains data to save in spreadsheet.
-    :param filename_spreadsheet: name of spreadsheet where the data
-     will be saved.
+    :param filename: name of spreadsheet where the data will be saved.
+    :param exp_conditions: contains string with experiment description
     """
+    name_spreadsheet = "datatemp/{}.xlsx".format(filename)
     try:
-        wb = openpyxl.load_workbook(filename_spreadsheet)
+        wb = openpyxl.load_workbook(name_spreadsheet)
     except:
         wb = openpyxl.Workbook()
     ws = wb.active
+    #Spreadsheet title.
+    ws.merge_cells('A1:K2')
+    ws.cell('A1').value = filename
+    ws.cell('A1').alignment = format_spreadsheet('center_al')
+    ws.cell('A1').font = format_spreadsheet('title_ft')
+    ws.cell('A1').fill = format_spreadsheet('blue_fill')
+    #Experiment conditions.
+    ws.merge_cells('A3:K5')
+    ws.cell('A3').value = exp_conditions
     rows = data.shape[0]
     cols = data.shape[1]
-    #Write in spreadsheet the headboard
+    #Write in spreadsheet the headboard.
     for y in range (0, cols):
-        ws.cell(column=y+1, row=1, value=header[y])
-    #Write in spreadsheet the data
+        ws.cell(column=y+1, row=6, value=header[y])
+        ws.cell(column=y+1, row=6).alignment = format_spreadsheet('right_al')
+        ws.cell(column=y+1, row=6).font = format_spreadsheet('white_ft')
+        ws.cell(column=y+1, row=6).fill = format_spreadsheet('blue_fill')
+        ws.cell(column=y+1, row=6).border = format_spreadsheet('thick_bd')
+    #Write in spreadsheet the data.
     for x in range(1, rows):
         for y in range(0, cols):
             element = float(data[x,y])
-            ws.cell(column=y+1, row=x+1, value=element).number_format = '0.00'
-            my_cell = ws.cell(column=y+1, row=x+1)
+            ws.cell(column=y+1, row=x+6, value=element).number_format = '0.00'
+            if x % 2 != 0:
+                ws.cell(column=y+1, row=x+6).fill = format_spreadsheet('skyblue_fill')
+            else:
+                ws.cell(column=y+1, row=x+6).fill = format_spreadsheet('white_fill')
+            my_cell = ws.cell(column=y+1, row=x+6)
             ws.column_dimensions[my_cell.column].width = 10
-    ws.merge_cells('M1:W3')
-    ws.cell('M1').value = exp_conditions
-    #Statistics
-    ws.cell('M1').value = exp_conditions
-    ws.merge_cells('M5:O5')
-    ws.cell('M5').value = "Average Differential Time:"
-    ws.merge_cells('M6:O6')
-    ws.cell('M6').value = "Median Differential Time:"
-    ws.merge_cells('M7:O7')
-    ws.cell('M7').value = "Mode Differential Time:"
-    ws.merge_cells('M8:O8')
-    ws.cell('M8').value = "Variance Differential Time:"
-    ws.merge_cells('M9:O9')
-    ws.cell('M9').value = "Tipical Deviation Differential Time:"
-    ws.merge_cells('M10:O10')
-    ws.cell('M10').value = "Average Differential Pos x:"
-    ws.merge_cells('M11:O11')
-    ws.cell('M11').value = "Median Differential Pos x:"
-    ws.merge_cells('M12:O12')
-    ws.cell('M12').value = "Mode Differential Pos x:"
-    ws.merge_cells('M13:O13')
-    ws.cell('M13').value = "Variance Differential Pos x:"
-    ws.merge_cells('M14:O14')
-    ws.cell('M14').value = "Tipical Deviation Differential Pos x:"
-    
-    wb.save(filename_spreadsheet)
+    #Write in spreadsheet the name of statistics.
+    for x in range(rows+6, rows+10):
+        ws.merge_cells(start_row=x,start_column=1,end_row=x,end_column=4)
+        ws.cell(column=1, row=x).alignment = format_spreadsheet('right_al')
+        ws.cell(column=1, row=x).fill = format_spreadsheet('blue_fill')
+        ws.cell(column=1, row=x).font = format_spreadsheet('white_ft')
+    ws.cell(column=1, row=rows+6, value='Sum differential data:')
+    ws.cell(column=1, row=rows+7, value='Mean of differential data:')
+    ws.cell(column=1, row=rows+8, value='Variance differential data:')
+    ws.cell(column=1, row=rows+9, value='Standard deviation differential data:')
+    ##Write and calculate in spreadsheet the statistics.
+    for y in range(5, cols+1):
+        letter_range = openpyxl.utils.get_column_letter(y)
+        start_range = '{}{}'.format(letter_range, 4)
+        end_range = '{}{}'.format(letter_range, rows+5)
+        interval = '{}:{}'.format(start_range,end_range)
+        ws.cell(column=y, row=rows+6, value= '=SUM({})\n'.format(interval))
+        ws.cell(column=y, row=rows+7, value= '=AVERAGE({})\n'.format(interval))
+        ws.cell(column=y, row=rows+8, value= '=VAR({})\n'.format(interval))
+        ws.cell(column=y, row=rows+9, value= '=STDEV({})\n'.format(interval))
+        for x in range(rows+6, rows+10):
+            ws.cell(column=y, row=x).number_format = '0.00'
+            ws.cell(column=y, row=x).font = format_spreadsheet('white_ft')
+            ws.cell(column=y, row=x).fill = format_spreadsheet('blue_fill')
+    wb.save(name_spreadsheet)
+    name_to_use = "datatemp/{}_TO_USE.xlsx".format(filename)
+    wb.save(name_to_use)
 
-#TODO NOT USED
-def data2textfile(headboard, data, filename_textfile):
-    """
-    Receives poses and time, and saves them in a textfile.
+    return name_to_use
 
-    :param data: contains data to save in a textfile.
-    :param filename_textfile: name of textfile where the data will
-     be saved.
-    """
-    text = ''
-    with open(filename_textfile, 'a') as outfile:
-        rows = data.shape[0]
-        cols = data.shape[1]
-        #Write in spreadsheet the headboard
-        for y in range (0, cols):
-            text = text + "{}".format(headboard[y])
-            add_space = True
-
-        text = text + "\n"
-        for x in range(1, rows):
-            for y in range(0, cols):
-                element = float("{0:.3f}".format(data[x,y]))
-                text = text + "{} \t\t\t".format(element)
-            text = text + "\n"
-        outfile.write(text)
 
 def save2master_xlsx(data_master):
     """
@@ -255,6 +309,26 @@ def save2master_xlsx(data_master):
     average angular speed, the set point left, the set point right, and the
     name of datafile.
     """
+    folder = '\'file:///home/joselamas/UviSpace/uvispace/uvisensor/resources/'
+    name_sheet = '\'#$Sheet.'
+    try:
+        wb = openpyxl.load_workbook(data_master[3])
+    except:
+        wb = openpyxl.Workbook()
+    ws = wb.active
+    #Next empty row search.
+    row = 7
+    written_row = True
+    while written_row:
+        element = ws.cell(column=1, row=row).value
+        if element == None:
+            written_row = False
+        else:
+            row +=1
+    row = row - 3
+    avg_speed = folder + data_master[3] + name_sheet + 'J' + '{}'.format(row)
+    avg_ang_speed = folder + data_master[3] + name_sheet + 'K' + '{}'.format(row)
+
     try:
         wb = openpyxl.load_workbook("datatemp/masterfile.xlsx")
     except:
@@ -269,19 +343,25 @@ def save2master_xlsx(data_master):
             written_row = False
         else:
             row +=1
-    #Write data in empty row.
-    cols = data_master.shape[0]
-    for y in range (0, cols):
-        if y < 2:
-            element = float(data_master[y])
+    ws.cell(column=1, row=row, value=data_master[0])
+    ws.cell(column=2, row=row, value=data_master[1])
+    ws.cell(column=3, row=row, value=data_master[2])
+    ws.cell(column=6, row=row, value=avg_speed)
+    ws.cell(column=7, row=row, value=avg_ang_speed)
+    ws.cell(column=8, row=row, value=" ")
+    for y in range (1, 8):
+        my_cell = ws.cell(column=y, row=row)
+        if y == 1:
+            ws.column_dimensions[my_cell.column].width = 18
         else:
-            element = data_master[y]
-        ws.cell(column=y+1, row=row, value=element).number_format = '0.00'
-        my_cell = ws.cell(column=y+1, row=row)
-        if y < 3:
             ws.column_dimensions[my_cell.column].width = 10
+        if row % 2 != 0:
+            ws.cell(column=y, row=row).fill = format_spreadsheet('skyblue_fill')
         else:
-            ws.column_dimensions[my_cell.column].width = 15
+            ws.cell(column=y, row=row).fill = format_spreadsheet('white_fill')
+        if y < 6:
+            ws.cell(column=y, row=row).alignment = format_spreadsheet('right_al')
+
     wb.save("datatemp/masterfile.xlsx")
 
 def save2master_txt(data_master):
