@@ -11,6 +11,7 @@ This module allows:
 -Save final data in master sheet.
 """
 # Standard libraries
+import glob
 import math
 import numpy as np
 from scipy import stats
@@ -63,7 +64,6 @@ def format_spreadsheet(cell):
         format_cell = openpyxl.styles.PatternFill(fill_type='solid',
                                                   start_color='FFFFFFFF',
                                                   end_color='FFFFFFFF')
-
     return format_cell
 
 def read_data(filename_spreadsheet="26_05_2017_1322-L160-R200.xlsx"):
@@ -112,16 +112,17 @@ def save_data(data, analyze=False):
     """
     #Get the SP values from the user.
     time.sleep(0.2)
-    #Delete first row data (row of zeros). Round all values to only 2 decimals.
+    #Delete first row data (row of zeros).
     data = data[1:data.shape[0], :]
     #First sample, time zero.
     data[0:data.shape[0], 0] = data[0:data.shape[0], 0] - data[0, 0]
     #TODO Try, except correct value.
     sp_left = input("Introduce value of sp_left between 0 and 255\n")
     sp_right = input("Introduce value of sp_left between 0 and 255\n")
-    #Call for data analysis function.
+    #Header construction and data analysis if the latter is required.
     if analyze:
-        data, save_master = analyze_data(data)
+        #Call for data analysis function.
+        data, save_master, avg_speed, avg_ang_speed = analyze_data(data)
         header_text = np.array(['Time', 'Pos x', 'Pos y', 'Angle', 'Diff Time',
                             'Diff Posx', 'Diff Posy', 'Diff Angl', 'Diff Long',
                             'Rel Speed', 'Rel AnSpd'])
@@ -130,8 +131,12 @@ def save_data(data, analyze=False):
         save_master = False
     full_data = np.vstack([header_text, data])
     # Name of the output file for the poses historic values.
-    datestamp = "{}".format(time.strftime("%d_%m_%Y_%H%M"))
-    filename = "{}-L{}-R{}".format(datestamp, sp_left, sp_right)
+    exist_file = glob.glob("./datatemp/*.txt")
+    exist_file.sort()
+    index = len (exist_file)
+    datestamp = "{}".format(time.strftime("%d_%m_%Y"))
+    filename = "{}_{}-L{}-R{}".format(datestamp, (index+1), sp_left, sp_right)
+    datestamp = '{}_{}'.format(datestamp, (index+1))
     name_txt = "datatemp/{}.txt".format(filename)
     name_mastertxt = "datatemp/masterfile.txt"
     #Header for numpy savetxt.
@@ -139,26 +144,27 @@ def save_data(data, analyze=False):
     cols = header_text.shape[0]
     for x in range (0, cols):
         element = header_text[x]
-        element = '%8s' % (element)
+        element = '%9s' % (element)
         header_numpy = '{}{}\t'.format(header_numpy, element)
     #Call to save data in textfile.
-    np.savetxt(name_txt, data, delimiter='\t', fmt='%8.2f',
+    np.savetxt(name_txt, data, delimiter='\t', fmt='%9.2f',
                header=header_numpy, comments='')
     #Experiment conditions.
-    exp_conditions = (" -Use camera 2\n -Position initial experiment forward: "
-                      "right rear wheel profile (-1800, 400), rear axis UGV in "
-                      "axis y, in -1800 x\n -Position initial experiment backward: "
-                      "right front wheel profile (-600, 400), rear axis UGV in "
-                      "axis y, in -600 x")
+    exp_conditions = (" -Use camera 3\n -Position initial experiment forward: "
+                      "right rear wheel profile (-1800, -600), rear axis UGV in "
+                      "axis y, in -1800 x\n -Time: 4 seconds")
     #Call to save data in spreadsheet.
     name_to_use = data2spreadsheet(header_text, full_data, filename,
                                    exp_conditions, save_master)
     #Save data to masterfile.
     if save_master:
-        #The average speed data is in the last row and last column.
+        #Call to save data in spreadsheet masterfile.  
         data_master = np.array([datestamp, sp_left, sp_right, name_to_use])
         save2master_xlsx(data_master)
-        #save2master_txt(data_master)
+        #Call to save data in text masterfile.         
+        data_master_txt = np.array([datestamp, sp_left, sp_right, avg_speed,
+                                    avg_ang_speed])
+        save2master_txt(data_master_txt)
 
 def analyze_data(data):
     """
@@ -183,6 +189,11 @@ def analyze_data(data):
     pos_y_lower = data[(rows-20):rows, 2]
     mode_pos_y_lower = stats.mode(pos_y_lower)
     #Determination of rows UGV data in motion.
+#conditions = np.any(data!=moda, axis=1)
+#indexes = np.where(conditions)[0]
+#filtered_data = data[indexes[0]-1:indexes[1]+2, :]
+    row_upper = 0
+    row_lower = rows
     for x in range(0, rows):
         if data[x,1] == mode_pos_x_upper[0] and data[x,2] == mode_pos_y_upper[0]:
             row_upper = x
@@ -191,8 +202,7 @@ def analyze_data(data):
             break
     #UGV data in motion.
     data = data [row_upper:row_lower, :]
-    rows = data.shape[0]
-    cols = data.shape[1]
+    rows, cols = data.shape
     #First sample, time zero.
     data[0:data.shape[0], 0] = data[0:data.shape[0], 0] - data[0, 0]
     #Differential data matrix: current data minus previous data.
@@ -221,10 +231,15 @@ def analyze_data(data):
     diff_data = np.insert(diff_data, 5, diff_speed, axis=1)
     diff_data = np.insert(diff_data, 6, diff_angle_speed, axis=1)
     data = np.hstack([data, diff_data])
+    #Average speed and average angle speed for masterfile txt.
+    mean_data = diff_data.sum(axis=0) / rows
+    avg_speed = np.round(mean_data[5], 2)
+    avg_ang_speed = np.round(mean_data[6], 2)
     #If you want to save to master file boolean True.
     save_master = True
     formatted_data = np.round(data, 2)
-    return formatted_data, save_master
+
+    return formatted_data, save_master, avg_speed, avg_ang_speed
 
 def data2spreadsheet(header, data, filename, exp_conditions, save_master):
     """
@@ -233,7 +248,8 @@ def data2spreadsheet(header, data, filename, exp_conditions, save_master):
     :param header: contains header to save in spreadsheet.
     :param data: contains data to save in spreadsheet.
     :param filename: name of spreadsheet where the data will be saved.
-    :param exp_conditions: contains string with experiment description
+    :param exp_conditions: contains string with experiment description.
+    :param save_master: boolean with True for save data in masterfile.
     """
     name_spreadsheet = "datatemp/{}.xlsx".format(filename)
     try:
@@ -250,9 +266,12 @@ def data2spreadsheet(header, data, filename, exp_conditions, save_master):
     #Experiment conditions.
     ws.merge_cells('A3:K5')
     ws.cell('A3').value = exp_conditions
+    #Freeze header
+    my_cell = ws['B7']
+    ws.freeze_panes = my_cell
+    #Write in spreadsheet the headboard.
     rows = data.shape[0]
     cols = data.shape[1]
-    #Write in spreadsheet the headboard.
     for y in range (0, cols):
         ws.cell(column=y+1, row=6, value=header[y])
         ws.cell(column=y+1, row=6).alignment = format_spreadsheet('right_al')
@@ -265,9 +284,11 @@ def data2spreadsheet(header, data, filename, exp_conditions, save_master):
             element = float(data[x,y])
             ws.cell(column=y+1, row=x+6, value=element).number_format = '0.00'
             if x % 2 != 0:
-                ws.cell(column=y+1, row=x+6).fill = format_spreadsheet('skyblue_fill')
+                ws.cell(column=y+1, row=x+6).fill = format_spreadsheet(
+                                                                 'skyblue_fill')
             else:
-                ws.cell(column=y+1, row=x+6).fill = format_spreadsheet('white_fill')
+                ws.cell(column=y+1, row=x+6).fill = format_spreadsheet(
+                                                                   'white_fill')
             my_cell = ws.cell(column=y+1, row=x+6)
             ws.column_dimensions[my_cell.column].width = 10
     #Write in spreadsheet the name of statistics.
@@ -295,11 +316,8 @@ def data2spreadsheet(header, data, filename, exp_conditions, save_master):
             ws.cell(column=y, row=x).font = format_spreadsheet('white_ft')
             ws.cell(column=y, row=x).fill = format_spreadsheet('blue_fill')
     wb.save(name_spreadsheet)
-    name_to_use = "datatemp/{}_TO_USE.xlsx".format(filename)
-    wb.save(name_to_use)
 
-    return name_to_use
-
+    return name_spreadsheet
 
 def save2master_xlsx(data_master):
     """
@@ -309,7 +327,8 @@ def save2master_xlsx(data_master):
     average angular speed, the set point left, the set point right, and the
     name of datafile.
     """
-    folder = '\'file:///home/joselamas/UviSpace/uvispace/uvisensor/resources/'
+    #Data search to save in masterspreadsheet.
+    folder = '\'file:///home/jorge/UviSpace/uvispace/uvisensor/'
     name_sheet = '\'#$Sheet.'
     try:
         wb = openpyxl.load_workbook(data_master[3])
@@ -328,12 +347,15 @@ def save2master_xlsx(data_master):
     row = row - 3
     avg_speed = folder + data_master[3] + name_sheet + 'J' + '{}'.format(row)
     avg_ang_speed = folder + data_master[3] + name_sheet + 'K' + '{}'.format(row)
-
+    #Save data in masterspreadsheet.
     try:
         wb = openpyxl.load_workbook("datatemp/masterfile.xlsx")
     except:
         wb = openpyxl.Workbook()
     ws = wb.active
+    #Freeze header
+    my_cell = ws['A2']
+    ws.freeze_panes = my_cell
     #Next empty row search.
     row = 1
     written_row = True
@@ -343,12 +365,16 @@ def save2master_xlsx(data_master):
             written_row = False
         else:
             row +=1
+    #Save data in empty row.
     ws.cell(column=1, row=row, value=data_master[0])
     ws.cell(column=2, row=row, value=data_master[1])
     ws.cell(column=3, row=row, value=data_master[2])
+    ws.cell(column=4, row=row, value= '=INDIRECT(F{})\n'.format(row))
+    ws.cell(column=5, row=row, value= '=INDIRECT(G{})\n'.format(row))
     ws.cell(column=6, row=row, value=avg_speed)
     ws.cell(column=7, row=row, value=avg_ang_speed)
-    ws.cell(column=8, row=row, value=" ")
+    ws.cell(column=8, row=row, value="_")
+    #Format data.
     for y in range (1, 8):
         my_cell = ws.cell(column=y, row=row)
         if y == 1:
@@ -361,7 +387,6 @@ def save2master_xlsx(data_master):
             ws.cell(column=y, row=row).fill = format_spreadsheet('white_fill')
         if y < 6:
             ws.cell(column=y, row=row).alignment = format_spreadsheet('right_al')
-
     wb.save("datatemp/masterfile.xlsx")
 
 def save2master_txt(data_master):
@@ -372,18 +397,16 @@ def save2master_txt(data_master):
     average angular speed, the set point left, the set point right, and the
     name of datafile.
     """
-    text = ''
-    with open("datatemp/masterfile.txt", 'a') as outfile:
     #TODO improve format
-        text = ''
-        cols = data_master.shape[0]
-        for y in range (0, cols):
-            element = data_master[y]
-            if y < 2:
-                element = float(data_master[y])
-                element = '%9.3f' % (element)
-            else:
-                element = '%9s' % (element)
-            text = '{}{}\t'.format(text, element)
-        text = '{}\n'.format(text)
+    cols = data_master.shape[0]
+    for y in range (0, cols):
+        value = data_master[y]
+        if y == 0:
+            #TODO use '.format' string construction style
+            text = '%9s' % (value)                
+        else:
+            text = '{}\t\t\t{}'.format(text, float(value))
+    text = '{}\n'.format(text)
+    with open("datatemp/masterfile.txt", 'a') as outfile:
         outfile.write(text)
+

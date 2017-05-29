@@ -416,7 +416,7 @@ def main():
     conf_files = glob.glob("./resources/config/*.cfg")
     conf_files.sort()
     # Reduce the list to only one camera, for testing purposes.
-    conf_files = [conf_files[1]]
+    conf_files = [conf_files[2]]
     threads = []
     # A Condition object for each camera thread execution.
     conditions = []
