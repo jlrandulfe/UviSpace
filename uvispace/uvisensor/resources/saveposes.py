@@ -118,7 +118,7 @@ def save_data(data, analyze=False):
     data[0:data.shape[0], 0] = data[0:data.shape[0], 0] - data[0, 0]
     #TODO Try, except correct value.
     sp_left = input("Introduce value of sp_left between 0 and 255\n")
-    sp_right = input("Introduce value of sp_left between 0 and 255\n")
+    sp_right = input("Introduce value of sp_right between 0 and 255\n")
     #Header construction and data analysis if the latter is required.
     if analyze:
         #Call for data analysis function.
@@ -152,8 +152,8 @@ def save_data(data, analyze=False):
                header=header_numpy, comments='')
     #Experiment conditions.
     exp_conditions = (" -Use camera 3\n -Position initial experiment forward: "
-                      "right rear wheel profile (-1800, -600), rear axis UGV in "
-                      "axis y, in -1800 x\n -Time: 4 seconds")
+                      "right rear wheel profile (-1400, -600), rear axis UGV in "
+                      "axis y, in -1800 x\n -Time: 3 seconds")
     #Call to save data in spreadsheet.
     name_to_use = data2spreadsheet(header_text, full_data, filename,
                                    exp_conditions, save_master)
@@ -370,8 +370,8 @@ def save2master_xlsx(data_master):
     ws.cell(column=1, row=row, value=data_master[0])
     ws.cell(column=2, row=row, value=data_master[1])
     ws.cell(column=3, row=row, value=data_master[2])
-    ws.cell(column=4, row=row, value= '=INDIRECT(F{})\n'.format(row))
-    ws.cell(column=5, row=row, value= '=INDIRECT(G{})\n'.format(row))
+    ws.cell(column=4, row=row, value= '=INDIRECT(F{})\n'.format(row)).number_format = '0.00'
+    ws.cell(column=5, row=row, value= '=INDIRECT(G{})\n'.format(row)).number_format = '0.00'
     ws.cell(column=6, row=row, value=avg_speed)
     ws.cell(column=7, row=row, value=avg_ang_speed)
     ws.cell(column=8, row=row, value="_")
