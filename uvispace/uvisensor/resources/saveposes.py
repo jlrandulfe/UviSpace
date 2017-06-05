@@ -144,11 +144,11 @@ def save_data(data, analyze=False):
     exist_file = glob.glob("datatemp/*.xlsx")
     exist_file.sort()
     index = len (exist_file)
-    datestamp = "A{}".format(time.strftime("%d_%m_%Y"))
+    datestamp = "RW{}".format(time.strftime("%d_%m_%Y"))
     filename = "{}_{}-L{}-R{}".format(datestamp, (index+1), sp_left, sp_right)
     datestamp = '{}_{}'.format(datestamp, (index+1))
     name_txt = "datatemp/{}.txt".format(filename)
-    name_mastertxt = "datatemp/masterfile.txt"
+    name_mastertxt = "datatemp/masterfile2.txt"
     #Header for numpy savetxt.
     header_numpy = ''
     cols = header_text.shape[0]
@@ -247,7 +247,7 @@ def analyze_data(data):
     avg_speed = np.round(mean_data[5], 2)
     avg_ang_speed = np.round(mean_data[6], 2)
     #If you want to save to master file boolean True.
-    save_master = False
+    save_master = True
     formatted_data = np.round(clipped_data, 2)
     return formatted_data, save_master, avg_speed, avg_ang_speed
 
@@ -397,7 +397,7 @@ def save2master_xlsx(data_master):
             ws.cell(column=y, row=row).fill = format_spreadsheet('white_fill')
         if y < 6:
             ws.cell(column=y, row=row).alignment = format_spreadsheet('right_al')
-    wb.save("datatemp/masterfile.xlsx")
+    wb.save("datatemp/masterfile2.xlsx")
 
 def save2master_txt(data_master):
     """
@@ -424,14 +424,14 @@ def save2master_txt(data_master):
 
 
 def main():
-    import pdb; pdb.set_trace()
-    o_exist_file = glob.glob("datatemp/*.xlsx")
+    o_exist_file = glob.glob("./datatemp/*.xlsx")
     o_exist_file.sort()
     o_index = len (o_exist_file)
     names = [os.path.basename(x) for x in o_exist_file]
     for y in range (0, o_index-2):
-        read_data(filename_spreadsheet=names[y], analyze=True)
-
+        import pdb; pdb.set_trace()
+        print names[y]
+        read_data(filename_spreadsheet='datatemp/' + names[y], analyze=True)
 
 if __name__ == '__main__':
     main()
