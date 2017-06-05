@@ -14,6 +14,7 @@ This module allows:
 import glob
 import math
 import numpy as np
+import os
 from scipy import stats
 import sys
 import time
@@ -66,13 +67,14 @@ def format_spreadsheet(cell):
                                                   end_color='FFFFFFFF')
     return format_cell
 
-def read_data(filename_spreadsheet="26_05_2017_1322-L160-R200.xlsx", analyze=True):
+def read_data(filename_spreadsheet="datatemp/31_05_2017_61-L160-R210.xlsx", analyze=True):
     """
     It allows to read poses and time of spreadsheet to analyze or save them.
 
     :param filename_spreadsheet: name of spreadsheet that contain the data to
     be read.
     """
+    ###29_05_2017_2-L160-R160.xlsx
     try:
         wb = openpyxl.load_workbook(filename_spreadsheet)
     except IOError:
@@ -80,29 +82,36 @@ def read_data(filename_spreadsheet="26_05_2017_1322-L160-R200.xlsx", analyze=Tru
     ws = wb.active
     #Initialization of matrices for data.
     data = np.array([0, 0, 0, 0]).astype(np.float64)
+    last_data = np.array([0, 0, 0, 0]).astype(np.float64)
     new_data = np.array([0, 0, 0, 0]).astype(np.float64)
     #The first row is the header, and the second is a set of zeros (already
     #initialized in the matrix). Begins to read row 3.
-    row = 3
+    row = 7
     #Number of columns in the matrix.
     cols = data.shape[0]
     #Loop for reading data.
     current_row_data = True
     while current_row_data:
         element = ws.cell(column=1, row=row).value
-        if element == None:
+        if element == 'Sum differential data:':
             current_row_data = False
         else:
+            new = False
+            #import pdb; pdb.set_trace()
             for y in range (0, cols):
                 element = ws.cell(column=y+1, row=row).value
                 new_data[y] = element
-            data = np.vstack([data, new_data])
+                if y > 0 :
+                    if new_data[y] != last_data [y]:
+                        new = True
+            if new == True:
+                last_data = np.copy(new_data)
+                data = np.vstack([data, new_data])
             row +=1
     formatted_data = np.round(data, 2)
     #Call to save and analyze data.
     save_data(formatted_data, analyze=analyze)
     return formatted_data
-
 def save_data(data, analyze=False):
     """
     Receives poses and time of matrix to analyze and/or save them.
@@ -128,14 +137,14 @@ def save_data(data, analyze=False):
                             'Rel Speed', 'Rel AnSpd'])
     else:
         header_text = np.array(['Time', 'Pos x', 'Pos y', 'Angle'])
-        save_master = False
-  
+        save_master = True
+
     full_data = np.vstack([header_text, data])
     # Name of the output file for the poses historic values.
-    exist_file = glob.glob("./datatemp/*.txt")
+    exist_file = glob.glob("datatemp/*.xlsx")
     exist_file.sort()
     index = len (exist_file)
-    datestamp = "{}".format(time.strftime("%d_%m_%Y"))
+    datestamp = "A{}".format(time.strftime("%d_%m_%Y"))
     filename = "{}_{}-L{}-R{}".format(datestamp, (index+1), sp_left, sp_right)
     datestamp = '{}_{}'.format(datestamp, (index+1))
     name_txt = "datatemp/{}.txt".format(filename)
@@ -159,10 +168,10 @@ def save_data(data, analyze=False):
                                    exp_conditions, save_master)
     #Save data to masterfile.
     if save_master:
-        #Call to save data in spreadsheet masterfile.  
+        #Call to save data in spreadsheet masterfile.
         data_master = np.array([datestamp, sp_left, sp_right, name_to_use])
         save2master_xlsx(data_master)
-        #Call to save data in text masterfile.         
+        #Call to save data in text masterfile.
         data_master_txt = np.array([datestamp, sp_left, sp_right, avg_speed,
                                     avg_ang_speed])
         save2master_txt(data_master_txt)
@@ -177,30 +186,30 @@ def analyze_data(data):
     :param data: Matrix of floats64 with data.
     """
     rows, cols = data.shape
-    #Data erase with UGV stopped.
-    #Initial repeated data calculation.
-    pos_x_upper = data[0:20, 1]
-    mode_pos_x_upper = stats.mode(pos_x_upper)
-    pos_y_upper = data[0:20, 2]
-    mode_pos_y_upper = stats.mode(pos_y_upper)
-    #Final repeated data calculation.
-    pos_x_lower = data[(rows-20):rows, 1]
-    mode_pos_x_lower = stats.mode(pos_x_lower)
-    pos_y_lower = data[(rows-20):rows, 2]
-    mode_pos_y_lower = stats.mode(pos_y_lower)
-    #Determination of rows UGV data in motion.
-#conditions = np.any(data!=moda, axis=1)
-#indexes = np.where(conditions)[0]
-#filtered_data = data[indexes[0]-1:indexes[1]+2, :]
+#     #Data erase with UGV stopped.
+#     #Initial repeated data calculation.
+#     pos_x_upper = data[0:20, 1]
+#     mode_pos_x_upper = stats.mode(pos_x_upper)
+#     pos_y_upper = data[0:20, 2]
+#     mode_pos_y_upper = stats.mode(pos_y_upper)
+#     #Final repeated data calculation.
+#     pos_x_lower = data[(rows-20):rows, 1]
+#     mode_pos_x_lower = stats.mode(pos_x_lower)
+#     pos_y_lower = data[(rows-20):rows, 2]
+#     mode_pos_y_lower = stats.mode(pos_y_lower)
+#     #Determination of rows UGV data in motion.
+# #conditions = np.any(data!=moda, axis=1)
+# #indexes = np.where(conditions)[0]
+# #filtered_data = data[indexes[0]-1:indexes[1]+2, :]
     row_upper = 0
     row_lower = rows
-    for x in range(0, rows):
-        if data[x,1] == mode_pos_x_upper[0] and data[x,2] == mode_pos_y_upper[0]:
-            row_upper = x
-        if data[x,1] == mode_pos_x_lower[0] and data[x,2] == mode_pos_y_lower[0]:
-            row_lower = x + 1
-            break
-    #UGV data in motion.
+    # for x in range(0, rows):
+    #     if data[x,1] == mode_pos_x_upper[0] and data[x,2] == mode_pos_y_upper[0]:
+    #         row_upper = x
+    #     if data[x,1] == mode_pos_x_lower[0] and data[x,2] == mode_pos_y_lower[0]:
+    #         row_lower = x + 1
+    #         break
+    # #UGV data in motion.
     clipped_data = data[row_upper:row_lower, :]
     rows, cols = clipped_data.shape
     #First sample, time zero.
@@ -222,7 +231,7 @@ def analyze_data(data):
 #    for x in range(1, rows):
 #        cos_alpha[x] = diff_data[x,1] / diff_length[x]
 #        cos_thetha[x] = math.cos(data[x,3])
-#        sign_spd[x] = math.sign(cos_thetha[x]/cos_alpha[x])        
+#        sign_spd[x] = math.sign(cos_thetha[x]/cos_alpha[x])
 #        if diff_data[x,0] != 0:
 #            #Speed in millimeters/second.
 #            diff_speed[x] = ((sign_spd[x] * diff_length[x]) / diff_data[x,0]) * 1000
@@ -238,7 +247,7 @@ def analyze_data(data):
     avg_speed = np.round(mean_data[5], 2)
     avg_ang_speed = np.round(mean_data[6], 2)
     #If you want to save to master file boolean True.
-    save_master = True
+    save_master = False
     formatted_data = np.round(clipped_data, 2)
     return formatted_data, save_master, avg_speed, avg_ang_speed
 
@@ -329,7 +338,7 @@ def save2master_xlsx(data_master):
     name of datafile.
     """
     #Data search to save in masterspreadsheet.
-    folder = '\'file:///home/jorge/UviSpace/uvispace/uvisensor/'
+    folder = '\'file:///home/joselamas/repository_ugv/UviSpace/uvispace/uvisensor/'
     name_sheet = '\'#$Sheet.'
     try:
         wb = openpyxl.load_workbook(data_master[3])
@@ -350,7 +359,7 @@ def save2master_xlsx(data_master):
     avg_ang_speed = folder + data_master[3] + name_sheet + 'K' + '{}'.format(row)
     #Save data in masterspreadsheet.
     try:
-        wb = openpyxl.load_workbook("datatemp/masterfile.xlsx")
+        wb = openpyxl.load_workbook("datatemp/masterfile2.xlsx")
     except:
         wb = openpyxl.Workbook()
     ws = wb.active
@@ -404,13 +413,25 @@ def save2master_txt(data_master):
         value = data_master[y]
         if y == 0:
             #TODO use '.format' string construction style
-            text = '%9s' % (value)                
+            text = '%9s' % (value)
         else:
             value = float(value)
             value = '%9.2f' % (value)
             text = '{}\t\t{}'.format(text, value)
     text = '{}\n'.format(text)
-    with open("datatemp/masterfile.txt", 'a') as outfile:
+    with open("datatemp/masterfile2.txt", 'a') as outfile:
         outfile.write(text)
 
 
+def main():
+    import pdb; pdb.set_trace()
+    o_exist_file = glob.glob("datatemp/*.xlsx")
+    o_exist_file.sort()
+    o_index = len (o_exist_file)
+    names = [os.path.basename(x) for x in o_exist_file]
+    for y in range (0, o_index-2):
+        read_data(filename_spreadsheet=names[y], analyze=True)
+
+
+if __name__ == '__main__':
+    main()
