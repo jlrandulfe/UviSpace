@@ -110,9 +110,9 @@ def read_data(filename_spreadsheet="datatemp/31_05_2017_61-L160-R210.xlsx", anal
             row +=1
     formatted_data = np.round(data, 2)
     #Call to save and analyze data.
-    save_data(formatted_data, analyze=analyze)
+    save_data(filename_spreadsheet, formatted_data, analyze=analyze)
     return formatted_data
-def save_data(data, analyze=False):
+def save_data(filename_spreadsheet, data, analyze=False):
     """
     Receives poses and time of matrix to analyze and/or save them.
 
@@ -133,7 +133,7 @@ def save_data(data, analyze=False):
         #Call for data analysis function.
         data, save_master, avg_speed, avg_ang_speed = analyze_data(data)
         header_text = np.array(['Time', 'Pos x', 'Pos y', 'Angle', 'Diff Time',
-                            'Diff Posx', 'Diff Posy', 'Diff Angl', 'Diff Long',
+                            'Diff Posx', 'Diff Posy', 'Diff Angl', 'Diff Leng',
                             'Rel Speed', 'Rel AnSpd'])
     else:
         header_text = np.array(['Time', 'Pos x', 'Pos y', 'Angle'])
@@ -242,10 +242,14 @@ def analyze_data(data):
     diff_data = np.insert(diff_data, 5, diff_speed, axis=1)
     diff_data = np.insert(diff_data, 6, diff_angle_speed, axis=1)
     clipped_data = np.hstack([clipped_data, diff_data])
+    #import pdb; pdb.set_trace()
     #Average speed and average angle speed for masterfile txt.
-    mean_data = diff_data.sum(axis=0) / rows
-    avg_speed = np.round(mean_data[5], 2)
-    avg_ang_speed = np.round(mean_data[6], 2)
+    rows, cols = clipped_data.shape
+    sum_data = diff_data.sum(axis=0)
+    length = math.sqrt(((clipped_data[rows-1,1] - clipped_data [0, 1])**2)+((clipped_data[rows-1,2] - clipped_data [0, 2])**2))
+    sum_data = diff_data.sum(axis=0)
+    avg_speed = np.round((1000*length/sum_data[0]), 2)
+    avg_ang_speed=np.round(((1000*(clipped_data[rows-1,3] - clipped_data [0, 3]))/sum_data[0]), 2)
     #If you want to save to master file boolean True.
     save_master = True
     formatted_data = np.round(clipped_data, 2)
@@ -302,7 +306,7 @@ def data2spreadsheet(header, data, filename, exp_conditions, save_master):
             my_cell = ws.cell(column=y+1, row=x+6)
             ws.column_dimensions[my_cell.column].width = 10
     #Write in spreadsheet the name of statistics.
-    for x in range(rows+6, rows+10):
+    for x in range(rows+6, rows+12):
         ws.merge_cells(start_row=x,start_column=1,end_row=x,end_column=4)
         ws.cell(column=1, row=x).alignment = format_spreadsheet('right_al')
         ws.cell(column=1, row=x).fill = format_spreadsheet('blue_fill')
@@ -310,21 +314,30 @@ def data2spreadsheet(header, data, filename, exp_conditions, save_master):
     ws.cell(column=1, row=rows+6, value='Sum differential data:')
     ws.cell(column=1, row=rows+7, value='Mean of differential data:')
     ws.cell(column=1, row=rows+8, value='Variance differential data:')
-    ws.cell(column=1, row=rows+9, value='Standard deviation differential data:')
+    ws.cell(column=1, row=rows+9, value='Std deviation differential data:')
+    ws.cell(column=8, row=rows+10, value='Linear Relative Speed:')
+    ws.cell(column=8, row=rows+11, value='Angular Relative Speed:')
+    ws.merge_cells(start_row=rows+10,start_column=8,end_row=rows+10,end_column=10)
+    ws.merge_cells(start_row=rows+11,start_column=8,end_row=rows+11,end_column=10)
     ##Write and calculate in spreadsheet the statistics.
     for y in range(5, cols+1):
         letter_range = openpyxl.utils.get_column_letter(y)
-        start_range = '{}{}'.format(letter_range, 4)
+        start_range = '{}{}'.format(letter_range, 7)
         end_range = '{}{}'.format(letter_range, rows+5)
         interval = '{}:{}'.format(start_range,end_range)
         ws.cell(column=y, row=rows+6, value= '=SUM({})\n'.format(interval))
         ws.cell(column=y, row=rows+7, value= '=AVERAGE({})\n'.format(interval))
         ws.cell(column=y, row=rows+8, value= '=VAR({})\n'.format(interval))
         ws.cell(column=y, row=rows+9, value= '=STDEV({})\n'.format(interval))
-        for x in range(rows+6, rows+10):
+        for x in range(rows+6, rows+12):
             ws.cell(column=y, row=x).number_format = '0.00'
             ws.cell(column=y, row=x).font = format_spreadsheet('white_ft')
             ws.cell(column=y, row=x).fill = format_spreadsheet('blue_fill')
+            ws.cell(column=y, row=x).alignment = format_spreadsheet('right_al')
+    ws.cell(column=11, row=rows+10, value= '=1000*SQRT(((B{rows}-B7)^2)+'
+            '(((C{rows}-C7)^2)))/E{rows2}\n'.format(rows=rows+5, rows2=rows+6))
+    ws.cell(column=11, row=rows+11, value= '=1000*(D{rows}-D7)/'
+                                'E{rows2}\n'.format(rows=rows+5, rows2=rows+6))
     wb.save(name_spreadsheet)
 
     return name_spreadsheet
@@ -354,8 +367,8 @@ def save2master_xlsx(data_master):
             written_row = False
         else:
             row +=1
-    row = row - 3
-    avg_speed = folder + data_master[3] + name_sheet + 'J' + '{}'.format(row)
+    avg_speed = folder + data_master[3] + name_sheet + 'K' + '{}'.format(row)
+    row = row + 1
     avg_ang_speed = folder + data_master[3] + name_sheet + 'K' + '{}'.format(row)
     #Save data in masterspreadsheet.
     try:
@@ -397,7 +410,7 @@ def save2master_xlsx(data_master):
             ws.cell(column=y, row=row).fill = format_spreadsheet('white_fill')
         if y < 6:
             ws.cell(column=y, row=row).alignment = format_spreadsheet('right_al')
-    wb.save("datatemp/masterfile2.xlsx")
+    wb.save("datatemp/masterfile3.xlsx")
 
 def save2master_txt(data_master):
     """
@@ -419,7 +432,7 @@ def save2master_txt(data_master):
             value = '%9.2f' % (value)
             text = '{}\t\t{}'.format(text, value)
     text = '{}\n'.format(text)
-    with open("datatemp/masterfile2.txt", 'a') as outfile:
+    with open("datatemp/masterfile3.txt", 'a') as outfile:
         outfile.write(text)
 
 
@@ -429,9 +442,21 @@ def main():
     o_index = len (o_exist_file)
     names = [os.path.basename(x) for x in o_exist_file]
     for y in range (0, o_index-2):
-        import pdb; pdb.set_trace()
+        #import pdb; pdb.set_trace()
         print names[y]
         read_data(filename_spreadsheet='datatemp/' + names[y], analyze=True)
+
+        import re
+
+test_string = "29_05_2017_16-L160-R200.xlsx"
+# Use as the beginning of the pattern the L letter, and the '-' as the end.
+pattern = '-L.*-'
+match = re.search(pattern, test_string)
+left_speed = match[2:-1]
+# Use as the beginning of the pattern the R letter, and the '-' as the end.
+pattern = '-R.\.'
+match = re.search(pattern, test_string)
+right_speed = match[2:-1]
 
 if __name__ == '__main__':
     main()
