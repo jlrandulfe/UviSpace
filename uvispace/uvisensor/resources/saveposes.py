@@ -15,6 +15,7 @@ import glob
 import math
 import numpy as np
 import os
+import re
 from scipy import stats
 import sys
 import time
@@ -125,9 +126,12 @@ def save_data(filename_spreadsheet, data, analyze=False):
     data = data[1:data.shape[0], :]
     #First sample, time zero.
     data[0:data.shape[0], 0] = data[0:data.shape[0], 0] - data[0, 0]
-    #TODO Try, except correct value.
-    sp_left = input("Introduce value of sp_left between 0 and 255\n")
-    sp_right = input("Introduce value of sp_right between 0 and 255\n")
+    numbers_filename = re.findall(r'\d+', filename_spreadsheet)
+    sp_left = int(numbers_filename[4])
+    sp_right = int(numbers_filename[5])
+    # #TODO Try, except correct value.
+    # sp_left = input("Introduce value of sp_left between 0 and 255\n")
+    # sp_right = input("Introduce value of sp_right between 0 and 255\n")
     #Header construction and data analysis if the latter is required.
     if analyze:
         #Call for data analysis function.
@@ -372,7 +376,7 @@ def save2master_xlsx(data_master):
     avg_ang_speed = folder + data_master[3] + name_sheet + 'K' + '{}'.format(row)
     #Save data in masterspreadsheet.
     try:
-        wb = openpyxl.load_workbook("datatemp/masterfile2.xlsx")
+        wb = openpyxl.load_workbook("datatemp/masterfile3.xlsx")
     except:
         wb = openpyxl.Workbook()
     ws = wb.active
@@ -441,22 +445,23 @@ def main():
     o_exist_file.sort()
     o_index = len (o_exist_file)
     names = [os.path.basename(x) for x in o_exist_file]
-    for y in range (0, o_index-2):
+    import pdb; pdb.set_trace()
+    for y in range (0, o_index-1):
         #import pdb; pdb.set_trace()
         print names[y]
         read_data(filename_spreadsheet='datatemp/' + names[y], analyze=True)
 
-        import re
-
-test_string = "29_05_2017_16-L160-R200.xlsx"
-# Use as the beginning of the pattern the L letter, and the '-' as the end.
-pattern = '-L.*-'
-match = re.search(pattern, test_string)
-left_speed = match[2:-1]
-# Use as the beginning of the pattern the R letter, and the '-' as the end.
-pattern = '-R.\.'
-match = re.search(pattern, test_string)
-right_speed = match[2:-1]
+# import re
+#
+# test_string = "29_05_2017_16-L160-R200.xlsx"
+# # Use as the beginning of the pattern the L letter, and the '-' as the end.
+# pattern = '-L.*-'
+# match = re.search(pattern, test_string)
+# left_speed = match[2:-1]
+# # Use as the beginning of the pattern the R letter, and the '-' as the end.
+# pattern = '-R.\.'
+# match = re.search(pattern, test_string)
+# right_speed = match[2:-1]
 
 if __name__ == '__main__':
     main()

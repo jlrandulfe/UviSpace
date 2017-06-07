@@ -1,0 +1,2 @@
+     Time	    Pos x	    Pos y	    Angle	Diff Time	Diff Posx	Diff Posy	Diff Angl	Diff Leng	Rel Speed	Rel AnSpd	
+     0.00	 -1349.97	  -540.45	     0.03	     0.00	     0.00	     0.00	     0.00	     0.00	     0.00	     0.00
