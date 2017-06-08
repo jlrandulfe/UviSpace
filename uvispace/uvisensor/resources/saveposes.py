@@ -75,7 +75,6 @@ def read_data(filename_spreadsheet="datatemp/31_05_2017_61-L160-R210.xlsx", anal
     :param filename_spreadsheet: name of spreadsheet that contain the data to
     be read.
     """
-    ###29_05_2017_2-L160-R160.xlsx
     try:
         wb = openpyxl.load_workbook(filename_spreadsheet)
     except IOError:
@@ -130,8 +129,8 @@ def save_data(filename_spreadsheet, data, analyze=False):
     sp_left = int(numbers_filename[4])
     sp_right = int(numbers_filename[5])
     # #TODO Try, except correct value.
-    # sp_left = input("Introduce value of sp_left between 0 and 255\n")
-    # sp_right = input("Introduce value of sp_right between 0 and 255\n")
+    sp_left = input("Introduce value of sp_left between 0 and 255\n")
+    sp_right = input("Introduce value of sp_right between 0 and 255\n")
     #Header construction and data analysis if the latter is required.
     if analyze:
         #Call for data analysis function.
@@ -190,29 +189,29 @@ def analyze_data(data):
     :param data: Matrix of floats64 with data.
     """
     rows, cols = data.shape
-#     #Data erase with UGV stopped.
-#     #Initial repeated data calculation.
-#     pos_x_upper = data[0:20, 1]
-#     mode_pos_x_upper = stats.mode(pos_x_upper)
-#     pos_y_upper = data[0:20, 2]
-#     mode_pos_y_upper = stats.mode(pos_y_upper)
-#     #Final repeated data calculation.
-#     pos_x_lower = data[(rows-20):rows, 1]
-#     mode_pos_x_lower = stats.mode(pos_x_lower)
-#     pos_y_lower = data[(rows-20):rows, 2]
-#     mode_pos_y_lower = stats.mode(pos_y_lower)
-#     #Determination of rows UGV data in motion.
-# #conditions = np.any(data!=moda, axis=1)
-# #indexes = np.where(conditions)[0]
-# #filtered_data = data[indexes[0]-1:indexes[1]+2, :]
+    #Data erase with UGV stopped.
+    #Initial repeated data calculation.
+    pos_x_upper = data[0:20, 1]
+    mode_pos_x_upper = stats.mode(pos_x_upper)
+    pos_y_upper = data[0:20, 2]
+    mode_pos_y_upper = stats.mode(pos_y_upper)
+    #Final repeated data calculation.
+    pos_x_lower = data[(rows-20):rows, 1]
+    mode_pos_x_lower = stats.mode(pos_x_lower)
+    pos_y_lower = data[(rows-20):rows, 2]
+    mode_pos_y_lower = stats.mode(pos_y_lower)
+    #Determination of rows UGV data in motion.
+#conditions = np.any(data!=moda, axis=1)
+#indexes = np.where(conditions)[0]
+#filtered_data = data[indexes[0]-1:indexes[1]+2, :]
     row_upper = 0
     row_lower = rows
-    # for x in range(0, rows):
-    #     if data[x,1] == mode_pos_x_upper[0] and data[x,2] == mode_pos_y_upper[0]:
-    #         row_upper = x
-    #     if data[x,1] == mode_pos_x_lower[0] and data[x,2] == mode_pos_y_lower[0]:
-    #         row_lower = x + 1
-    #         break
+    for x in range(0, rows):
+        if data[x,1] == mode_pos_x_upper[0] and data[x,2] == mode_pos_y_upper[0]:
+            row_upper = x
+        if data[x,1] == mode_pos_x_lower[0] and data[x,2] == mode_pos_y_lower[0]:
+            row_lower = x + 1
+            break
     # #UGV data in motion.
     clipped_data = data[row_upper:row_lower, :]
     rows, cols = clipped_data.shape
@@ -451,17 +450,6 @@ def main():
         print names[y]
         read_data(filename_spreadsheet='datatemp/' + names[y], analyze=True)
 
-# import re
-#
-# test_string = "29_05_2017_16-L160-R200.xlsx"
-# # Use as the beginning of the pattern the L letter, and the '-' as the end.
-# pattern = '-L.*-'
-# match = re.search(pattern, test_string)
-# left_speed = match[2:-1]
-# # Use as the beginning of the pattern the R letter, and the '-' as the end.
-# pattern = '-R.\.'
-# match = re.search(pattern, test_string)
-# right_speed = match[2:-1]
 
 if __name__ == '__main__':
     main()
