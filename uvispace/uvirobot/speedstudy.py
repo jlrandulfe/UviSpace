@@ -60,10 +60,10 @@ def main():
     my_serial = connect_and_check(robot_id)
     my_robot = RobotController(robot_id)
     # Request of speeds and time to the user
-    #left_solver = PolySpeedSolver(coefs=(128.2, 0.311, -57.05, 0, 0, 0))
-    #right_solver = PolySpeedSolver(coefs=(116.1, 0.3269, 60.87, 0, 0, 0))
-    left_solver = PolySpeedSolver(coefs=(115.5, 0.347, 36.6, 0, -0.4232, 22.03))
-    right_solver = PolySpeedSolver(coefs=(110.7, 0.3357, -84.03, 0, 0.6101, 19.21))
+    left_solver = PolySpeedSolver(coefs=(128.2, 0.311, -57.05, 0, 0, 0))
+    right_solver = PolySpeedSolver(coefs=(116.1, 0.3269, 60.87, 0, 0, 0))
+    #left_solver = PolySpeedSolver(coefs=(115.5, 0.347, 36.6, 0, -0.4232, 22.03))
+    #right_solver = PolySpeedSolver(coefs=(110.7, 0.3357, -84.03, 0, 0.6101, 19.21))
     # sp_left = input("Enter the speed value for the left wheels, between "
     #                 "0 and 255 \n")
     # sp_right = input("Enter the speed value for the right wheels, between "
@@ -72,16 +72,17 @@ def main():
     angular = float(raw_input("Enter the angular speed value\n"))
     operatingtime = float(raw_input("Enter the time to evaluate in seconds \n"))
     init_time = time.time()
-    sp_right = right_solver.solve(linear, angular)
-    sp_left = left_solver.solve(linear, angular)
-    print "I am sending (%d, %d)" % (sp_right, sp_left)
+    sp_right = int(right_solver.solve(linear, angular))
+    sp_left = int(left_solver.solve(linear, angular))
+    print "I am sending (%d, %d)" % (sp_left, sp_right)
     while (time.time() - init_time) < operatingtime:
         my_serial.move([sp_right, sp_left])
     # When the desired time passes, the speed is zero
+    print "I am sending (%d, %d)" % (sp_left, sp_right)
     sp_right = 127
     sp_left = 127
     my_serial.move([sp_right, sp_left])
-    print "I am sending (%d, %d)" % (sp_right, sp_left)
+    print "I am sending (%d, %d)" % (sp_left, sp_right)
 
 if __name__ == '__main__':
     main()

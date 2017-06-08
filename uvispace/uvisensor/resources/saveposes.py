@@ -112,7 +112,7 @@ def read_data(filename_spreadsheet="datatemp/31_05_2017_61-L160-R210.xlsx", anal
     #Call to save and analyze data.
     save_data(filename_spreadsheet, formatted_data, analyze=analyze)
     return formatted_data
-def save_data(filename_spreadsheet, data, analyze=False):
+def save_data(data, analyze=False):
     """
     Receives poses and time of matrix to analyze and/or save them.
 
@@ -123,11 +123,34 @@ def save_data(filename_spreadsheet, data, analyze=False):
     time.sleep(0.2)
     #Delete first row data (row of zeros).
     data = data[1:data.shape[0], :]
+    
+
+    data_2 = np.array([0, 0, 0, 0]).astype(np.float64)
+    last_data_2 = np.array([0, 0, 0, 0]).astype(np.float64)
+    new_data_2 = np.array([0, 0, 0, 0]).astype(np.float64)
+    #Number of columns in the matrix.
+    rows, cols = data.shape
+    #Loop for reading data.
+    current_row_data = True
+    for x in range (0, rows):
+        new = False
+        for y in range (0, cols):
+            new_data_2[y] = data[x,y]
+            if y > 0 :
+                if new_data_2[y] != last_data_2 [y]:
+                    new = True
+        if new == True:
+            last_data_2 = np.copy(new_data_2)
+            data_2 = np.vstack([data_2, new_data_2])
+    data = data_2
+
+    data = data[1:data.shape[0], :]
+
     #First sample, time zero.
     data[0:data.shape[0], 0] = data[0:data.shape[0], 0] - data[0, 0]
-    numbers_filename = re.findall(r'\d+', filename_spreadsheet)
-    sp_left = int(numbers_filename[4])
-    sp_right = int(numbers_filename[5])
+    #numbers_filename = re.findall(r'\d+', filename_spreadsheet)
+    #sp_left = int(numbers_filename[4])
+    #sp_right = int(numbers_filename[5])
     # #TODO Try, except correct value.
     sp_left = input("Introduce value of sp_left between 0 and 255\n")
     sp_right = input("Introduce value of sp_right between 0 and 255\n")
@@ -147,11 +170,10 @@ def save_data(filename_spreadsheet, data, analyze=False):
     exist_file = glob.glob("datatemp/*.xlsx")
     exist_file.sort()
     index = len (exist_file)
-    datestamp = "RW{}".format(time.strftime("%d_%m_%Y"))
+    datestamp = "{}".format(time.strftime("%d_%m_%Y"))
     filename = "{}_{}-L{}-R{}".format(datestamp, (index+1), sp_left, sp_right)
     datestamp = '{}_{}'.format(datestamp, (index+1))
     name_txt = "datatemp/{}.txt".format(filename)
-    name_mastertxt = "datatemp/masterfile2.txt"
     #Header for numpy savetxt.
     header_numpy = ''
     cols = header_text.shape[0]
@@ -169,7 +191,7 @@ def save_data(filename_spreadsheet, data, analyze=False):
     #Call to save data in spreadsheet.
     name_to_use = data2spreadsheet(header_text, full_data, filename,
                                    exp_conditions, save_master)
-    #Save data to masterfile.
+    #Save data to F.
     if save_master:
         #Call to save data in spreadsheet masterfile.
         data_master = np.array([datestamp, sp_left, sp_right, name_to_use])
@@ -354,7 +376,7 @@ def save2master_xlsx(data_master):
     name of datafile.
     """
     #Data search to save in masterspreadsheet.
-    folder = '\'file:///home/joselamas/repository_ugv/UviSpace/uvispace/uvisensor/'
+    folder = '\'file:///home/jorge/UviSpace/uvispace/uvisensor/'
     name_sheet = '\'#$Sheet.'
     try:
         wb = openpyxl.load_workbook(data_master[3])
@@ -375,7 +397,7 @@ def save2master_xlsx(data_master):
     avg_ang_speed = folder + data_master[3] + name_sheet + 'K' + '{}'.format(row)
     #Save data in masterspreadsheet.
     try:
-        wb = openpyxl.load_workbook("datatemp/masterfile3.xlsx")
+        wb = openpyxl.load_workbook("datatemp/masterfile4.xlsx")
     except:
         wb = openpyxl.Workbook()
     ws = wb.active
@@ -413,7 +435,7 @@ def save2master_xlsx(data_master):
             ws.cell(column=y, row=row).fill = format_spreadsheet('white_fill')
         if y < 6:
             ws.cell(column=y, row=row).alignment = format_spreadsheet('right_al')
-    wb.save("datatemp/masterfile3.xlsx")
+    wb.save("datatemp/masterfile4.xlsx")
 
 def save2master_txt(data_master):
     """
@@ -435,7 +457,7 @@ def save2master_txt(data_master):
             value = '%9.2f' % (value)
             text = '{}\t\t{}'.format(text, value)
     text = '{}\n'.format(text)
-    with open("datatemp/masterfile3.txt", 'a') as outfile:
+    with open("datatemp/masterfile4.txt", 'a') as outfile:
         outfile.write(text)
 
 
