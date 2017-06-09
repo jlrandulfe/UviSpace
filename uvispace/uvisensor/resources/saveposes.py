@@ -171,8 +171,8 @@ def save_data(data, analyze=False):
     exist_file.sort()
     index = len (exist_file)
     datestamp = "{}".format(time.strftime("%d_%m_%Y"))
-    filename = "{}_{}-L{}-R{}".format(datestamp, (index+1), sp_left, sp_right)
-    datestamp = '{}_{}'.format(datestamp, (index+1))
+    filename = "{}_{}-L{}-R{}".format(datestamp, (index+1+15), sp_left, sp_right)
+    datestamp = '{}_{}'.format(datestamp, (index+1+15))
     name_txt = "datatemp/{}.txt".format(filename)
     #Header for numpy savetxt.
     header_numpy = ''

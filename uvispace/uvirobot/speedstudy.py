@@ -60,10 +60,15 @@ def main():
     my_serial = connect_and_check(robot_id)
     my_robot = RobotController(robot_id)
     # Request of speeds and time to the user
-    left_solver = PolySpeedSolver(coefs=(128.2, 0.311, -57.05, 0, 0, 0))
-    right_solver = PolySpeedSolver(coefs=(116.1, 0.3269, 60.87, 0, 0, 0))
+    # Equation degrees linear velocity 1 and angular velocity 1.
+    #left_solver = PolySpeedSolver(coefs=(128.2, 0.311, -57.05, 0, 0, 0))
+    #right_solver = PolySpeedSolver(coefs=(116.1, 0.3269, 60.87, 0, 0, 0))
+    # Equation degrees linear velocity 1 and angular velocity 2.
     #left_solver = PolySpeedSolver(coefs=(115.5, 0.347, 36.6, 0, -0.4232, 22.03))
     #right_solver = PolySpeedSolver(coefs=(110.7, 0.3357, -84.03, 0, 0.6101, 19.21))
+    # Equation degrees linear velocity 2 and angular velocity 2.
+    left_solver = PolySpeedSolver(coefs=(117.1, 0.334, 36.02, 0.00002422, -0.4208, 22.21))
+    right_solver = PolySpeedSolver(coefs=(141, 0.0902, -94.88, 0.0004565, 0.6557, 22.59))
     # sp_left = input("Enter the speed value for the left wheels, between "
     #                 "0 and 255 \n")
     # sp_right = input("Enter the speed value for the right wheels, between "
@@ -75,6 +80,7 @@ def main():
     sp_right = int(right_solver.solve(linear, angular))
     sp_left = int(left_solver.solve(linear, angular))
     print "I am sending (%d, %d)" % (sp_left, sp_right)
+    #import pdb; pdb.set_trace()
     while (time.time() - init_time) < operatingtime:
         my_serial.move([sp_right, sp_left])
     # When the desired time passes, the speed is zero
