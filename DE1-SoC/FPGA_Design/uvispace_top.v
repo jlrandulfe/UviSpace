@@ -397,7 +397,7 @@ camera_capture u3(
   assign  CCD_LVAL     =  GPIO_1[21]; //line valid
   assign  ccd_pixel_clk=  GPIO_1[0];  //Pixel clock
   assign  GPIO_1[19]   =  1'b1;       //trigger
-  assign  GPIO_1[17]   =  video_stream_reset_n;
+  assign  GPIO_1[17]   =  camera_reset_n;
 
   // Refreshes the data on the CCD camera on every pixel clock pulse.
   always@(posedge ccd_pixel_clk)
@@ -655,12 +655,12 @@ SEG7_LUT_8 u5(
 
 // Component for writing configuration to the camera peripheral.
 camera_config #(
-  .CLK_FREQ(25000000),  // 25 MHz
+  .CLK_FREQ(96000000),  // pixel_clock = 96 MHz
   .I2C_FREQ(20000)      // 20 kHz
   ) camera_conf(
   // Host Side
   .clock(ccd_pixel_clk),
-  .reset_n(video_stream_reset_n),
+  .reset_n(camera_reset_n),
   // Configuration registers
   .exposure(in_exposure),
   .start_row(in_start_row),
@@ -669,6 +669,7 @@ camera_config #(
   .column_size(in_column_size),
   .row_mode(in_row_mode),
   .column_mode(in_column_mode),
+  .cam_restart(!sync_soft_reset_n),
   // Ready signal
   .out_ready(ready),
   // I2C Side
@@ -692,20 +693,15 @@ camera_config #(
   // assign in_column_size = 16'h09FF;
   // assign in_row_mode = 16'h0011;
   // assign in_column_mode = 16'h0011;
-  
+
+wire camera_reset_n;
 // Synchronization of the software reset with the pixel clock.
-reg sync_soft_reset;
-reg _camera_soft_reset_n;
+reg sync_soft_reset_n;
 always @(posedge ccd_pixel_clk) begin
-  _camera_soft_reset_n = camera_soft_reset_n;
-  if (_camera_soft_reset_n != camera_soft_reset_n) begin
-    sync_soft_reset = 0;
-  end
-  else begin
-    sync_soft_reset = 1;
-  end
+  sync_soft_reset_n = camera_soft_reset_n;
 end
 // Reset logic
-assign video_stream_reset_n = (sync_soft_reset & KEY[0]);
+assign video_stream_reset_n = (sync_soft_reset_n & KEY[0]);
+assign camera_reset_n = KEY[0];
 
 endmodule
