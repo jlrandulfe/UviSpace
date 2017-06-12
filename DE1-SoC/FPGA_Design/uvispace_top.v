@@ -205,13 +205,13 @@ integer vga_col;
 //CCD peripheral signal
 wire	  [11:0] CCD_DATA;
 //CCD_Capture signals
-wire    [11:0] ccd_data_captured;		//output data from CCD_Capture
-wire				   ccd_dval;            //valid output data
+wire    [11:0] ccd_data_captured;		// Output data from CCD_Capture
+wire				   ccd_dval;            // Valid output data
 wire    [15:0] X_Cont;
 wire	  [15:0] Y_Cont;
-reg     [11:0] ccd_data_raw;		    //input raw data to CCD_Capture
-reg            ccd_fval_raw;		    //frame valid
-reg            ccd_lval_raw;		    //line valid
+reg     [11:0] ccd_data_raw;		    // Input raw data to CCD_Capture
+reg            ccd_fval_raw;		    // Frame valid
+reg            ccd_lval_raw;		    // Line valid
 wire           ccd_pixel_clk;
 wire           ccd_reset;
 wire    [31:0] Frame_Cont;
@@ -219,7 +219,7 @@ wire    [31:0] Frame_Cont;
 wire    [11:0] raw_rgb_red;
 wire    [11:0] raw_rgb_green;
 wire    [11:0] raw_rgb_blue;
-wire           raw_rgb_dval;        //valid output data
+wire           raw_rgb_dval;        // Valid output data
 //SDRAM FIFOs data
 reg     [15:0] fifo1_writedata;
 reg     [15:0] fifo2_writedata;
@@ -398,9 +398,6 @@ camera_capture u3(
   assign  ccd_pixel_clk=  GPIO_1[0];  //Pixel clock
   assign  GPIO_1[19]   =  1'b1;       //trigger
   assign  GPIO_1[17]   =  video_stream_reset_n;
-  
-  assign  GPIO_0[0]   =  video_stream_reset_n;
-  assign  GPIO_0[1]   =  ccd_pixel_clk;
 
   // Refreshes the data on the CCD camera on every pixel clock pulse.
   always@(posedge ccd_pixel_clk)
