@@ -48,6 +48,7 @@ module camera_config #(
         input [15:0] column_size,
         input [15:0] row_mode,
         input [15:0] column_mode,
+        input        cam_restart,
         // Ready output
         output out_ready,
         // I2C Side
@@ -95,15 +96,17 @@ module camera_config #(
 //------------------------------------------------------------------------------
 
     // LUT Data Number
-    parameter LUT_SIZE = 25;
+    parameter LUT_SIZE = 26;
     
     // Configuration control
     reg [23:0] LUT_DATA;
     reg [5:0] LUT_INDEX;
     reg [3:0] mSetup_ST;
-    
+
     reg _ready;
-   
+    // This register is used for checking a change on the cam_restart level.
+    reg _cam_restart;
+
     always @(posedge mI2C_CTRL_CLK or negedge reset_n)
     begin
         if (!reset_n) begin
@@ -130,6 +133,16 @@ module camera_config #(
                 end
                 2: begin
                     LUT_INDEX	<= LUT_INDEX + 1;
+                    // Only write to the restart register when the cam_restart
+                    // input changed from 0 to 1. Ignore the register the rest
+                    // of the time (It is automatically cleared by the camera
+                    // hardware.
+                    if ( LUT_INDEX == 25) begin
+                      if ({cam_restart, _cam_restart} != 10) begin
+                        LUT_INDEX <= LUT_INDEX + 1;
+                      end
+                      _cam_restart = cam_restart;
+                    end
                     mSetup_ST	<= 0;
                 end
             endcase
@@ -188,7 +201,8 @@ module camera_config #(
             22: LUT_DATA <= {8'h22, row_mode}; // Set row mode in bin mode
             23: LUT_DATA <= {8'h23, column_mode}; // Set column mode in bin mode
             24: LUT_DATA <= 24'h4901A8; // Row black target
-            //25: LUT_DATA <= 24'h1E4106; // Set snapshot mode
+            25: LUT_DATA <= {8'h0B, 16'd0001};    // Set the restart bit to 1
+            //26: LUT_DATA <= 24'h1E4106; // Set snapshot mode
             default: LUT_DATA <= 24'h000000;
         endcase
     end
