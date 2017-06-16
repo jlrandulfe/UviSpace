@@ -24,7 +24,7 @@ Project documentation
    :alt: Documentation Status
 
 The oficial documentation about the UviSpace project is hosted at
-.. _this website: http://uvispace.readthedocs.io/en/latest/
+ `this website <http://uvispace.readthedocs.io/en/latest/>`_.
 
 ========
 uvirobot
